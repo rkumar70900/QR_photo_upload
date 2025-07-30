@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Upload Your Photo</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <h2>📸 Upload Your Photo</h2>
+    {% if message %}
+        <p style="color: green;">{{ message }}</p>
+    {% endif %}
+    {% if error %}
+        <p style="color: red;">{{ error }}</p>
+    {% endif %}
+    <form action="/upload" method="post" enctype="multipart/form-data">
+        <label for="guest">Your Name:</label><br>
+        <input type="text" id="guest" name="guest" required><br><br>
+
+        <label for="photo">Select Photo:</label><br>
+        <input type="file" id="photo" name="photo" accept="image/*" capture="environment" required><br><br>
+
+        <button type="submit">Upload Photo</button>
+    </form>
+</body>
+</html>
