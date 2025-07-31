@@ -120,22 +120,25 @@
     .progress {
       width: 100%;
       height: 20px;
-      background-color: #e9ecef;
-      border-radius: 4px;
+      background-color: rgba(0, 0, 0, 0.1);
+      border-radius: 10px;
       margin: 1rem 0;
       overflow: hidden;
-      display: none;
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
     }
 
     .progress-bar {
       height: 100%;
-      background-color: #28a745;
       width: 0%;
+      background: linear-gradient(90deg, #4CAF50, #8BC34A);
       color: white;
       text-align: center;
       line-height: 20px;
       font-size: 12px;
-      transition: width 0.3s;
+      font-weight: bold;
+      transition: width 0.3s ease;
+      text-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     }
 
     .message {
@@ -218,16 +221,8 @@
         return;
       }
 
-      const formData = new FormData();
+      const formData = new FormData(uploadForm);
       
-      // Add guest name to form data
-      formData.append('guest', guestName);
-      
-      // Append each file to FormData
-      for (let i = 0; i < files.length; i++) {
-        formData.append('files', files[i]);
-      }
-
       // Show progress bar
       progressWrapper.style.display = 'block';
       progressBar.style.width = '0%';
@@ -236,25 +231,45 @@
       uploadBtn.textContent = 'Uploading...';
       
       try {
-        const response = await fetch('/upload', {
-          method: 'POST',
-          body: formData,
-        });
-
-        const result = await response.json();
+        const xhr = new XMLHttpRequest();
         
-        if (response.ok) {
-          showMessage(result.message || 'Upload successful!', 'success');
-          fileInput.value = '';
-          document.getElementById('guest').value = '';
-        } else {
-          throw new Error(result.message || 'Upload failed');
-        }
+        xhr.upload.onprogress = function(event) {
+          if (event.lengthComputable) {
+            const percentComplete = Math.round((event.loaded / event.total) * 100);
+            progressBar.style.width = percentComplete + '%';
+            progressBar.textContent = percentComplete + '%';
+          }
+        };
+        
+        xhr.onload = function() {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            const result = JSON.parse(xhr.responseText);
+            showMessage(result.message || 'Upload successful!', 'success');
+            fileInput.value = '';
+            document.getElementById('guest').value = '';
+          } else {
+            let errorMessage = 'Upload failed';
+            try {
+              const errorResult = JSON.parse(xhr.responseText);
+              errorMessage = errorResult.detail || errorMessage;
+            } catch (e) {
+              console.error('Error parsing error response:', e);
+            }
+            throw new Error(errorMessage);
+          }
+        };
+        
+        xhr.onerror = function() {
+          throw new Error('Network error occurred during upload');
+        };
+        
+        xhr.open('POST', '/upload', true);
+        xhr.send(formData);
+        
       } catch (error) {
         console.error('Upload error:', error);
         showMessage(error.message || 'An error occurred during upload', 'error');
       } finally {
-        progressWrapper.style.display = 'none';
         uploadBtn.disabled = false;
         uploadBtn.textContent = 'Upload';
       }
