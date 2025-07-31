@@ -22,25 +22,26 @@ async def upload_form(request: Request):
 async def upload_files(
     request: Request,
     guest: str = Form(...),
-    photo: UploadFile = File(...)
+    photos: List[UploadFile] = File(...)
 ):
-    try:
-        # Create directory for the guest if it doesn't exist
-        guest_dir = os.path.join(UPLOAD_DIR, guest)
-        os.makedirs(guest_dir, exist_ok=True)
-        
-        # Save the uploaded file
+    # try:
+    # Create directory for the guest if it doesn't exist
+    guest_dir = os.path.join(UPLOAD_DIR, guest)
+    os.makedirs(guest_dir, exist_ok=True)
+    
+    # Save the uploaded file
+    for photo in photos:
         file_path = os.path.join(guest_dir, photo.filename)
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(photo.file, buffer)
-            
-        return templates.TemplateResponse("upload.html", {
-            "request": request,
-            "message": f"Thanks {guest}! Your photo has been uploaded successfully."
-        })
         
-    except Exception as e:
-        return templates.TemplateResponse("upload.html", {
-            "request": request,
-            "error": f"Error uploading file: {str(e)}"
-        })
+    return templates.TemplateResponse("upload.html", {
+        "request": request,
+        "message": f"Thanks {guest}! Your photos have been uploaded successfully."
+    })
+        
+    # except Exception as e:
+    #     return templates.TemplateResponse("upload.html", {
+    #         "request": request,
+    #         "error": f"Error uploading file: {str(e)}"
+    #     })

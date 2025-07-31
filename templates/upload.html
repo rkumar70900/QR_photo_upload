@@ -16,10 +16,22 @@
         <label for="guest">Your Name:</label><br>
         <input type="text" id="guest" name="guest" required><br><br>
 
-        <label for="photo">Select Photo:</label><br>
-        <input type="file" id="photo" name="photo" accept="image/*" required><br><br>
+        <label for="photos">Select Photos (Max 20):</label><br>
+        <input type="file" id="photos" name="photos" accept="image/*" multiple required><br><br>
 
         <button type="submit">Upload Photo</button>
     </form>
 </body>
 </html>
+
+<script>
+    const photoInput = document.getElementById('photos');
+    
+    photoInput.addEventListener('change', function (event) {
+      const files = event.target.files;
+      if (files.length > 20) {
+        alert('Please select 20 or fewer photos.');
+        event.target.value = ''; // Reset file input
+      }
+    });
+</script>
