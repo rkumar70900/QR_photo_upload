@@ -347,7 +347,82 @@
       }, 5000);
     }
 
-    // Handle form submission
+    const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB chunks
+
+    async function uploadFile(file, guest) {
+      const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+      const chunkSize = Math.min(CHUNK_SIZE, file.size);
+      
+      try {
+        // Start the upload
+        const startResponse = await fetch('/api/upload/start', {
+          method: 'POST',
+          body: new URLSearchParams({
+            'guest': guest,
+            'filename': file.name,
+            'file_size': file.size
+          })
+        });
+        
+        const { upload_id } = await startResponse.json();
+        
+        // Upload chunks in parallel (up to 3 at a time)
+        const chunks = [];
+        for (let i = 0; i < totalChunks; i++) {
+          const start = i * CHUNK_SIZE;
+          const end = Math.min(file.size, start + CHUNK_SIZE);
+          chunks.push({
+            number: i + 1,
+            blob: file.slice(start, end, file.type)
+          });
+        }
+        
+        // Process 3 chunks at a time
+        const CONCURRENT_UPLOADS = 3;
+        for (let i = 0; i < chunks.length; i += CONCURRENT_UPLOADS) {
+          const chunkGroup = chunks.slice(i, i + CONCURRENT_UPLOADS);
+          await Promise.all(chunkGroup.map(chunk => uploadChunk(chunk, upload_id)));
+          
+          // Update progress
+          const progress = Math.min(i + CONCURRENT_UPLOADS, chunks.length) / chunks.length * 100;
+          progressBar.style.width = `${progress}%`;
+          progressBar.textContent = `${Math.round(progress)}%`;
+        }
+        
+        // Complete the upload
+        const completeResponse = await fetch('/api/upload/complete', {
+          method: 'POST',
+          body: new URLSearchParams({ upload_id })
+        });
+        
+        const result = await completeResponse.json();
+        return { success: true, file: file.name };
+        
+      } catch (error) {
+        console.error('Upload error:', error);
+        return { success: false, file: file.name, error: error.message };
+      }
+    }
+    
+    async function uploadChunk(chunk, uploadId) {
+      const formData = new FormData();
+      formData.append('upload_id', uploadId);
+      formData.append('chunk_number', chunk.number);
+      formData.append('chunk', chunk.blob);
+      
+      const response = await fetch('/api/upload/chunk', {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to upload chunk ${chunk.number}`);
+      }
+      
+      return response.json();
+    }
+
+    // Update the form submission handler
     uploadForm.addEventListener('submit', async function(e) {
       e.preventDefault();
       
@@ -368,8 +443,6 @@
         return;
       }
 
-      const formData = new FormData(uploadForm);
-      
       // Show progress bar
       progressWrapper.style.display = 'block';
       progressBar.style.width = '0%';
@@ -378,40 +451,27 @@
       uploadBtn.textContent = 'Uploading...';
       
       try {
-        const xhr = new XMLHttpRequest();
+        // Process each file
+        const results = [];
+        for (let i = 0; i < files.length; i++) {
+          const result = await uploadFile(files[i], guestName);
+          results.push(result);
+          
+          // Update progress for the current file
+          const progress = ((i + 1) / files.length) * 100;
+          progressBar.style.width = `${progress}%`;
+          progressBar.textContent = `${Math.round(progress)}%`;
+        }
         
-        xhr.upload.onprogress = function(event) {
-          if (event.lengthComputable) {
-            const percentComplete = Math.round((event.loaded / event.total) * 100);
-            progressBar.style.width = percentComplete + '%';
-            progressBar.textContent = percentComplete + '%';
-          }
-        };
+        // Check for any failed uploads
+        const failed = results.filter(r => !r.success);
+        if (failed.length > 0) {
+          throw new Error(`Failed to upload ${failed.length} file(s)`);
+        }
         
-        xhr.onload = function() {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            const result = JSON.parse(xhr.responseText);
-            showMessage(result.message || 'Upload successful!', 'success');
-            fileInput.value = '';
-            document.getElementById('guest').value = '';
-          } else {
-            let errorMessage = 'Upload failed';
-            try {
-              const errorResult = JSON.parse(xhr.responseText);
-              errorMessage = errorResult.detail || errorMessage;
-            } catch (e) {
-              console.error('Error parsing error response:', e);
-            }
-            throw new Error(errorMessage);
-          }
-        };
-        
-        xhr.onerror = function() {
-          throw new Error('Network error occurred during upload');
-        };
-        
-        xhr.open('POST', '/upload', true);
-        xhr.send(formData);
+        showMessage(`Successfully uploaded ${results.length} file(s)!`, 'success');
+        fileInput.value = '';
+        document.getElementById('guest').value = '';
         
       } catch (error) {
         console.error('Upload error:', error);
