@@ -160,6 +160,128 @@
       color: #721c24;
       border: 1px solid #f5c6cb;
     }
+
+    /* Gallery Styles */
+    .gallery-btn {
+        display: block;
+        width: 100%;
+        padding: 12px;
+        margin-top: 20px;
+        background-color: #6c757d;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+    .gallery-btn:hover {
+        background-color: #5a6268;
+    }
+
+    /* Modal Styles */
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+        z-index: 1000;
+        overflow: auto;
+    }
+
+    .modal-content, .preview-content {
+        background-color: #fefefe;
+        margin: 5% auto;
+        padding: 20px;
+        border-radius: 8px;
+        max-width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+        position: relative;
+    }
+
+    .preview-content {
+        text-align: center;
+        max-width: 90%;
+        max-height: 90vh;
+    }
+
+    .preview-content img {
+        max-width: 100%;
+        max-height: 80vh;
+        object-fit: contain;
+    }
+
+    .close-btn {
+        position: absolute;
+        top: 10px;
+        right: 20px;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    /* Gallery Styles */
+    .folders-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 15px;
+        margin: 20px 0;
+    }
+
+    .folder {
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+        text-align: center;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .folder:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .photos-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 15px;
+        margin-top: 20px;
+    }
+
+    .photo {
+        position: relative;
+        padding-top: 100%;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+        overflow: hidden;
+        cursor: pointer;
+    }
+
+    .photo img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s;
+    }
+
+    .photo:hover img {
+        transform: scale(1.05);
+    }
+
+    .loading {
+        text-align: center;
+        padding: 20px;
+        color: #6c757d;
+    }
   </style>
 </head>
 <body>
@@ -178,6 +300,31 @@
 
       <div class="message" id="message"></div>
     </form>
+    
+    <button id="viewGalleryBtn" class="gallery-btn">View Gallery</button>
+  </div>
+
+  <!-- Gallery Modal -->
+  <div id="galleryModal" class="modal">
+      <div class="modal-content">
+          <span class="close-btn">&times;</span>
+          <h2>Photo Gallery</h2>
+          <div id="galleryFolders" class="folders-container">
+              <!-- Folders will be loaded here -->
+              <div class="loading">Loading folders...</div>
+          </div>
+          <div id="galleryPhotos" class="photos-container">
+              <!-- Photos will be loaded here when a folder is selected -->
+          </div>
+      </div>
+  </div>
+
+  <!-- Photo Preview Modal -->
+  <div id="previewModal" class="modal">
+      <div class="preview-content">
+          <span class="close-btn">&times;</span>
+          <img id="previewImage" src="" alt="Preview">
+      </div>
   </div>
 
   <script>
@@ -272,6 +419,162 @@
       } finally {
         uploadBtn.disabled = false;
         uploadBtn.textContent = 'Upload';
+      }
+    });
+  </script>
+
+  <script>
+    // Preload the initial folders from server-side rendering
+    const initialFolders = {{ initial_folders|tojson|safe }};
+    let currentFolder = '';
+    let preloadedImages = new Map(); // To track preloaded images
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const galleryModal = document.getElementById('galleryModal');
+      const previewModal = document.getElementById('previewModal');
+      const viewGalleryBtn = document.getElementById('viewGalleryBtn');
+      const galleryFolders = document.getElementById('galleryFolders');
+      const galleryPhotos = document.getElementById('galleryPhotos');
+      const previewImage = document.getElementById('previewImage');
+
+      // Get close buttons by their parent modal
+      const galleryCloseBtn = galleryModal.querySelector('.close-btn');
+      const previewCloseBtn = previewModal.querySelector('.close-btn');
+
+      // Preload all folders' images in the background
+      function preloadAllFolders() {
+        if (initialFolders.length === 0) return;
+        
+        initialFolders.forEach(folder => {
+          fetch(`/api/gallery/photos/${encodeURIComponent(folder)}`)
+            .then(response => response.json())
+            .then(data => {
+              if (data.photos && data.photos.length > 0) {
+                // Store the preloaded photos
+                preloadedImages.set(folder, data.photos);
+                
+                // Preload images in the background
+                data.photos.forEach(photo => {
+                  const img = new Image();
+                  img.src = photo.url;
+                });
+              }
+            })
+            .catch(console.error);
+        });
+      }
+
+      // Load photos in a folder, using preloaded data if available
+      async function loadPhotos(folder) {
+        if (!folder) return;
+        
+        galleryPhotos.innerHTML = '<div class="loading">Loading photos...</div>';
+        currentFolder = folder;
+        
+        // If we have preloaded data, use it immediately
+        if (preloadedImages.has(folder)) {
+          const photos = preloadedImages.get(folder);
+          renderPhotos(photos);
+          return;
+        }
+        
+        // Otherwise, fetch from the server
+        try {
+          const response = await fetch(`/api/gallery/photos/${encodeURIComponent(folder)}`);
+          const data = await response.json();
+          
+          if (data.photos && data.photos.length > 0) {
+            // Cache the results for future use
+            preloadedImages.set(folder, data.photos);
+            renderPhotos(data.photos);
+          } else {
+            galleryPhotos.innerHTML = '<div class="loading">No photos found in this folder</div>';
+          }
+        } catch (error) {
+          console.error('Error loading photos:', error);
+          galleryPhotos.innerHTML = '<div class="loading">Error loading photos</div>';
+        }
+      }
+      
+      // Helper function to render photos
+      function renderPhotos(photos) {
+        galleryPhotos.innerHTML = photos.map(photo => `
+          <div class="photo" data-src="${photo.url}">
+            <img src="${photo.url}" alt="${photo.name}" loading="lazy">
+          </div>
+        `).join('');
+        
+        // Add click event to photos
+        document.querySelectorAll('.photo').forEach(photo => {
+          photo.addEventListener('click', () => {
+            previewImage.src = photo.dataset.src;
+            previewModal.style.display = 'block';
+          });
+        });
+      }
+
+      // Open gallery modal with preloaded data
+      viewGalleryBtn.addEventListener('click', function() {
+        galleryModal.style.display = 'block';
+        renderFolders();
+        
+        // If we have a current folder, show its photos
+        if (currentFolder) {
+          loadPhotos(currentFolder);
+        } else if (initialFolders.length > 0) {
+          loadPhotos(initialFolders[0]);
+        }
+      });
+
+      // Close gallery modal
+      galleryCloseBtn.addEventListener('click', function() {
+        galleryModal.style.display = 'none';
+      });
+
+      // Close preview modal
+      previewCloseBtn.addEventListener('click', function() {
+        previewModal.style.display = 'none';
+      });
+
+      // Close modals when clicking outside the content
+      window.addEventListener('click', function(event) {
+        if (event.target === galleryModal) {
+          galleryModal.style.display = 'none';
+        }
+        if (event.target === previewModal && !event.target.closest('.preview-content')) {
+          previewModal.style.display = 'none';
+        }
+      });
+
+      // Render folders from preloaded data
+      function renderFolders() {
+        if (initialFolders.length > 0) {
+          galleryFolders.innerHTML = initialFolders.map(folder => `
+            <div class="folder" data-folder="${folder}">
+              <div>📁</div>
+              <div>${folder}</div>
+            </div>
+          `).join('');
+          
+          // Add click event to folders
+          document.querySelectorAll('.folder').forEach(folder => {
+            folder.addEventListener('click', () => {
+              currentFolder = folder.dataset.folder;
+              loadPhotos(currentFolder);
+            });
+          });
+        } else {
+          galleryFolders.innerHTML = '<div class="loading">No folders found</div>';
+        }
+      }
+
+      // Start preloading all folders when the page loads
+      if (initialFolders.length > 0) {
+        preloadAllFolders();
+        // Also preload the first folder immediately for better UX
+        if (initialFolders[0]) {
+          loadPhotos(initialFolders[0]);
+        }
       }
     });
   </script>

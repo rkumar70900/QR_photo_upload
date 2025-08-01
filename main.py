@@ -1,14 +1,14 @@
-from fastapi import FastAPI, File, UploadFile, Request, Form, HTTPException
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi import FastAPI, File, UploadFile, Request, Form, HTTPException, Query
+from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import os
 import shutil
-from typing import List
+from typing import List, Dict, Optional
 import re
 from pathlib import Path
 
-UPLOAD_DIR = "/app/uploads/"
+UPLOAD_DIR = "/Users/raj/Documents/GitHub/QR_photo_upload/uploads"
 MAX_FILE_SIZE = 1024 * 1024 * 1024  # 1GB in bytes
 ALLOWED_EXTENSIONS = {
     'image': ['jpg', 'jpeg', 'png', 'gif', 'webp'],
@@ -36,9 +36,51 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # Ensure upload directory exists
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+@app.get("/api/gallery/folders")
+async def list_gallery_folders():
+    """List all guest folders in the upload directory"""
+    try:
+        if not os.path.exists(UPLOAD_DIR):
+            os.makedirs(UPLOAD_DIR, exist_ok=True)
+            return []
+            
+        folders = [f for f in os.listdir(UPLOAD_DIR) 
+                  if os.path.isdir(os.path.join(UPLOAD_DIR, f)) and not f.startswith('.')]
+        return {"folders": sorted(folders)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/gallery/photos/{folder}")
+async def list_photos_in_folder(folder: str):
+    """List all photos in a specific guest folder"""
+    try:
+        folder_path = os.path.join(UPLOAD_DIR, folder)
+        if not os.path.exists(folder_path) or not os.path.isdir(folder_path):
+            raise HTTPException(status_code=404, detail="Folder not found")
+            
+        photos = []
+        for filename in os.listdir(folder_path):
+            if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp', '.heif')):
+                photos.append({
+                    "name": filename,
+                    "url": f"/uploads/{folder}/{filename}"
+                })
+        return {"photos": sorted(photos, key=lambda x: x["name"])}
+    except Exception as e:
+        raise HTTPException(status_csode=500, detail=str(e))
+
 @app.get("/", response_class=HTMLResponse)
 async def upload_form(request: Request):
-    return templates.TemplateResponse("upload.html", {"request": request})
+    # Get list of folders for the gallery
+    folders = []
+    if os.path.exists(UPLOAD_DIR):
+        folders = [f for f in os.listdir(UPLOAD_DIR) 
+                 if os.path.isdir(os.path.join(UPLOAD_DIR, f)) and not f.startswith('.')]
+    
+    return templates.TemplateResponse("upload.html", {
+        "request": request,
+        "initial_folders": folders
+    })
 
 @app.post("/upload")
 async def upload_files(
@@ -87,7 +129,10 @@ async def upload_files(
 
         return JSONResponse(
             status_code=200,
-            content={"message": f"Successfully uploaded {len(saved_files)} files to {guest}'s folder"}
+            content={
+                "message": f"Successfully uploaded {len(saved_files)} files to {guest}'s folder",
+                "folder": sanitize_filename(guest)
+            }
         )
         
     except HTTPException as he:
@@ -97,3 +142,6 @@ async def upload_files(
             status_code=500,
             detail=f"Error uploading files: {str(e)}"
         )
+
+# Serve uploaded files
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
