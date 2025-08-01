@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Photo & Video Upload</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bitcount+Prop+Single:wght@100..900&family=Playwrite+AU+QLD:wght@100..400&display=swap" rel="stylesheet">
- <style>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bitcount+Prop+Single:wght@100..900&family=Playwrite+AU+QLD:wght@100..400&display=swap" rel="stylesheet">
+  <style>
     /* Base styles */
     * {
       margin: 0;
@@ -28,14 +28,13 @@
       background-color: #f5f5f5;
     }
 
-    /* Background image for mobile (portrait) */
+    /* Background image */
     @media (max-width: 767px) {
       body {
         background-image: url('/static/images/desktop.HEIC');
       }
     }
 
-    /* Background image for desktop (landscape) */
     @media (min-width: 768px) {
       body {
         background-image: url('/static/images/desktop.HEIC');
@@ -50,7 +49,7 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background-color: rgba(0, 0, 0, 0.3); /* Adjust opacity as needed */
+      background-color: rgba(0, 0, 0, 0.3);
       z-index: 0;
     }
 
@@ -59,7 +58,7 @@
       max-width: 90%;
       min-width: 300px;
       padding: 2rem;
-      background-color: rgba(255, 255, 255, 0.9); /* Semi-transparent white */
+      background-color: rgba(255, 255, 255, 0.9);
       border-radius: 12px;
       box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
       position: relative;
@@ -98,14 +97,14 @@
     }
 
     button {
+      padding: 0.75rem;
       background-color: #007bff;
       color: white;
-      padding: 0.75rem;
       border: none;
       border-radius: 4px;
-      font-size: 1rem;
       cursor: pointer;
-      transition: background-color 0.3s;
+      font-size: 1rem;
+      transition: background-color 0.2s;
     }
 
     button:hover {
@@ -119,168 +118,149 @@
 
     .progress {
       width: 100%;
-      height: 20px;
-      background-color: rgba(0, 0, 0, 0.1);
-      border-radius: 10px;
-      margin: 1rem 0;
-      overflow: hidden;
-      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+      background-color: #e9ecef;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      display: none;
     }
 
     .progress-bar {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, #4CAF50, #8BC34A);
+      height: 1.5rem;
+      background-color: #28a745;
+      border-radius: 4px;
       color: white;
       text-align: center;
-      line-height: 20px;
-      font-size: 12px;
-      font-weight: bold;
-      transition: width 0.3s ease;
-      text-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      line-height: 1.5rem;
+      width: 0%;
+      transition: width 0.3s;
     }
 
     .message {
-      margin-top: 1rem;
       padding: 0.75rem;
       border-radius: 4px;
+      margin-top: 1rem;
       display: none;
-      text-align: center;
     }
 
-    .success {
-      background-color: rgba(212, 237, 218, 0.9);
+    .message.success {
+      background-color: #d4edda;
       color: #155724;
       border: 1px solid #c3e6cb;
     }
 
-    .error {
-      background-color: rgba(248, 215, 218, 0.9);
+    .message.error {
+      background-color: #f8d7da;
       color: #721c24;
       border: 1px solid #f5c6cb;
     }
 
-    /* Gallery Styles */
-    .gallery-btn {
-        display: block;
-        width: 100%;
-        padding: 12px;
-        margin-top: 20px;
-        background-color: #6c757d;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        font-size: 1rem;
-        cursor: pointer;
-        transition: background-color 0.3s;
+    .message.warning {
+      background-color: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffeeba;
     }
 
-    .gallery-btn:hover {
-        background-color: #5a6268;
-    }
-
-    /* Modal Styles */
+    /* Modal styles */
     .modal {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.8);
-        z-index: 1000;
-        overflow: auto;
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.7);
+      z-index: 1000;
+      overflow: auto;
     }
 
-    .modal-content, .preview-content {
-        background-color: #fefefe;
-        margin: 5% auto;
-        padding: 20px;
-        border-radius: 8px;
-        max-width: 90%;
-        max-height: 80vh;
-        overflow-y: auto;
-        position: relative;
+    .modal-content {
+      background-color: #fff;
+      margin: 5% auto;
+      padding: 2rem;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 800px;
+      max-height: 80vh;
+      overflow-y: auto;
+      position: relative;
     }
 
     .preview-content {
-        text-align: center;
-        max-width: 90%;
-        max-height: 90vh;
+      position: relative;
+      text-align: center;
     }
 
     .preview-content img {
-        max-width: 100%;
-        max-height: 80vh;
-        object-fit: contain;
+      max-width: 100%;
+      max-height: 70vh;
+      object-fit: contain;
     }
 
     .close-btn {
-        position: absolute;
-        top: 10px;
-        right: 20px;
-        font-size: 28px;
-        font-weight: bold;
-        cursor: pointer;
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
     }
 
-    /* Gallery Styles */
+    /* Gallery styles */
     .folders-container {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        gap: 15px;
-        margin: 20px 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 15px;
+      margin: 20px 0;
     }
 
     .folder {
-        padding: 15px;
-        background-color: #f8f9fa;
-        border-radius: 4px;
-        text-align: center;
-        cursor: pointer;
-        transition: transform 0.2s, box-shadow 0.2s;
+      padding: 15px;
+      background-color: #f8f9fa;
+      border-radius: 4px;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
     }
 
     .folder:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      transform: translateY(-3px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
 
     .photos-container {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        gap: 15px;
-        margin-top: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 15px;
+      margin-top: 20px;
     }
 
     .photo {
-        position: relative;
-        padding-top: 100%;
-        background-color: #f8f9fa;
-        border-radius: 4px;
-        overflow: hidden;
-        cursor: pointer;
+      position: relative;
+      padding-top: 100%;
+      background-color: #f8f9fa;
+      border-radius: 4px;
+      overflow: hidden;
+      cursor: pointer;
     }
 
     .photo img {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        transition: transform 0.3s;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s;
     }
 
     .photo:hover img {
-        transform: scale(1.05);
+      transform: scale(1.05);
     }
 
     .loading {
-        text-align: center;
-        padding: 20px;
-        color: #6c757d;
+      text-align: center;
+      padding: 20px;
+      color: #6c757d;
     }
   </style>
 </head>
@@ -294,7 +274,7 @@
       <input type="file" id="media" name="files" accept="image/*,video/*" multiple required>
       <button type="submit" id="uploadBtn">Upload</button>
 
-      <div class="progress" style="display: none;">
+      <div class="progress">
         <div class="progress-bar" id="progressBar">0%</div>
       </div>
 
@@ -306,28 +286,36 @@
 
   <!-- Gallery Modal -->
   <div id="galleryModal" class="modal">
-      <div class="modal-content">
-          <span class="close-btn">&times;</span>
-          <h2>Photo Gallery</h2>
-          <div id="galleryFolders" class="folders-container">
-              <!-- Folders will be loaded here -->
-              <div class="loading">Loading folders...</div>
-          </div>
-          <div id="galleryPhotos" class="photos-container">
-              <!-- Photos will be loaded here when a folder is selected -->
-          </div>
+    <div class="modal-content">
+      <span class="close-btn">&times;</span>
+      <h2>Photo Gallery</h2>
+      <div id="galleryFolders" class="folders-container">
+        <div class="loading">Loading folders...</div>
       </div>
+      <div id="galleryPhotos" class="photos-container">
+        <!-- Photos will be loaded here when a folder is selected -->
+      </div>
+    </div>
   </div>
 
   <!-- Photo Preview Modal -->
   <div id="previewModal" class="modal">
-      <div class="preview-content">
-          <span class="close-btn">&times;</span>
-          <img id="previewImage" src="" alt="Preview">
-      </div>
+    <div class="preview-content">
+      <span class="close-btn">&times;</span>
+      <img id="previewImage" src="" alt="Preview">
+    </div>
   </div>
 
-  <script>
+  <!-- JavaScript Modules -->
+  <script type="module" src="/static/js/uploader.js"></script>
+  <script type="module" src="/static/js/gallery.js"></script>
+  
+  <!-- Inline script for configuration -->
+  <script type="module">
+    // Import the uploader and gallery modules
+    import ChunkedUploader from '/static/js/uploader.js';
+    
+    // Initialize the uploader
     const uploadForm = document.getElementById('uploadForm');
     const fileInput = document.getElementById('media');
     const progressBar = document.getElementById('progressBar');
@@ -347,234 +335,75 @@
       }, 5000);
     }
 
+    // Initialize the uploader
+    const uploader = new ChunkedUploader({
+      onProgress: (progress) => {
+        progressWrapper.style.display = 'block';
+        progressBar.style.width = `${progress.percent}%`;
+        progressBar.textContent = `${progress.percent}%`;
+      },
+      onComplete: (result) => {
+        showMessage('Upload completed successfully!', 'success');
+        progressWrapper.style.display = 'none';
+        uploadBtn.disabled = false;
+      },
+      onError: (error) => {
+        showMessage(error.message || 'Upload failed', 'error');
+        progressWrapper.style.display = 'none';
+        uploadBtn.disabled = false;
+      }
+    });
+
     // Handle form submission
     uploadForm.addEventListener('submit', async function(e) {
       e.preventDefault();
       
-      const guestName = document.getElementById('guest').value.trim();
-      if (!guestName) {
+      const files = fileInput.files;
+      const guest = document.getElementById('guest').value.trim();
+      
+      if (!guest) {
         showMessage('Please enter your name', 'error');
         return;
       }
       
-      const files = fileInput.files;
       if (files.length === 0) {
         showMessage('Please select at least one file', 'error');
         return;
       }
-
+      
       if (files.length > 20) {
-        showMessage('You can upload a maximum of 20 files.', 'error');
+        showMessage('You can upload a maximum of 20 files', 'error');
         return;
       }
-
-      const formData = new FormData(uploadForm);
-      
-      // Show progress bar
-      progressWrapper.style.display = 'block';
-      progressBar.style.width = '0%';
-      progressBar.textContent = '0%';
-      uploadBtn.disabled = true;
-      uploadBtn.textContent = 'Uploading...';
       
       try {
-        const xhr = new XMLHttpRequest();
+        uploadBtn.disabled = true;
+        progressWrapper.style.display = 'block';
+        progressBar.style.width = '0%';
+        progressBar.textContent = '0%';
         
-        xhr.upload.onprogress = function(event) {
-          if (event.lengthComputable) {
-            const percentComplete = Math.round((event.loaded / event.total) * 100);
-            progressBar.style.width = percentComplete + '%';
-            progressBar.textContent = percentComplete + '%';
+        // Upload each file sequentially
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          console.log(`Uploading file ${i+1}/${files.length}: ${file.name}`);
+          
+          try {
+            await uploader.uploadFile(file, guest);
+          } catch (error) {
+            console.error(`Error uploading ${file.name}:`, error);
+            showMessage(`Error uploading ${file.name}: ${error.message}`, 'error');
           }
-        };
+        }
         
-        xhr.onload = function() {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            const result = JSON.parse(xhr.responseText);
-            showMessage(result.message || 'Upload successful!', 'success');
-            fileInput.value = '';
-            document.getElementById('guest').value = '';
-          } else {
-            let errorMessage = 'Upload failed';
-            try {
-              const errorResult = JSON.parse(xhr.responseText);
-              errorMessage = errorResult.detail || errorMessage;
-            } catch (e) {
-              console.error('Error parsing error response:', e);
-            }
-            throw new Error(errorMessage);
-          }
-        };
-        
-        xhr.onerror = function() {
-          throw new Error('Network error occurred during upload');
-        };
-        
-        xhr.open('POST', '/upload', true);
-        xhr.send(formData);
-        
+        // Reset form on success
+        fileInput.value = '';
+        document.getElementById('guest').value = '';
+        showMessage('All files uploaded successfully!', 'success');
       } catch (error) {
-        console.error('Upload error:', error);
-        showMessage(error.message || 'An error occurred during upload', 'error');
+        console.error('Upload process failed:', error);
+        showMessage('Upload process failed. Please try again.', 'error');
       } finally {
         uploadBtn.disabled = false;
-        uploadBtn.textContent = 'Upload';
-      }
-    });
-  </script>
-
-  <script>
-    // Preload the initial folders from server-side rendering
-    const initialFolders = {{ initial_folders|tojson|safe }};
-    let currentFolder = '';
-    let preloadedImages = new Map(); // To track preloaded images
-
-    document.addEventListener('DOMContentLoaded', function() {
-      const galleryModal = document.getElementById('galleryModal');
-      const previewModal = document.getElementById('previewModal');
-      const viewGalleryBtn = document.getElementById('viewGalleryBtn');
-      const galleryFolders = document.getElementById('galleryFolders');
-      const galleryPhotos = document.getElementById('galleryPhotos');
-      const previewImage = document.getElementById('previewImage');
-
-      // Get close buttons by their parent modal
-      const galleryCloseBtn = galleryModal.querySelector('.close-btn');
-      const previewCloseBtn = previewModal.querySelector('.close-btn');
-
-      // Preload all folders' images in the background
-      function preloadAllFolders() {
-        if (initialFolders.length === 0) return;
-        
-        initialFolders.forEach(folder => {
-          fetch(`/api/gallery/photos/${encodeURIComponent(folder)}`)
-            .then(response => response.json())
-            .then(data => {
-              if (data.photos && data.photos.length > 0) {
-                // Store the preloaded photos
-                preloadedImages.set(folder, data.photos);
-                
-                // Preload images in the background
-                data.photos.forEach(photo => {
-                  const img = new Image();
-                  img.src = photo.url;
-                });
-              }
-            })
-            .catch(console.error);
-        });
-      }
-
-      // Load photos in a folder, using preloaded data if available
-      async function loadPhotos(folder) {
-        if (!folder) return;
-        
-        galleryPhotos.innerHTML = '<div class="loading">Loading photos...</div>';
-        currentFolder = folder;
-        
-        // If we have preloaded data, use it immediately
-        if (preloadedImages.has(folder)) {
-          const photos = preloadedImages.get(folder);
-          renderPhotos(photos);
-          return;
-        }
-        
-        // Otherwise, fetch from the server
-        try {
-          const response = await fetch(`/api/gallery/photos/${encodeURIComponent(folder)}`);
-          const data = await response.json();
-          
-          if (data.photos && data.photos.length > 0) {
-            // Cache the results for future use
-            preloadedImages.set(folder, data.photos);
-            renderPhotos(data.photos);
-          } else {
-            galleryPhotos.innerHTML = '<div class="loading">No photos found in this folder</div>';
-          }
-        } catch (error) {
-          console.error('Error loading photos:', error);
-          galleryPhotos.innerHTML = '<div class="loading">Error loading photos</div>';
-        }
-      }
-      
-      // Helper function to render photos
-      function renderPhotos(photos) {
-        galleryPhotos.innerHTML = photos.map(photo => `
-          <div class="photo" data-src="${photo.url}">
-            <img src="${photo.url}" alt="${photo.name}" loading="lazy">
-          </div>
-        `).join('');
-        
-        // Add click event to photos
-        document.querySelectorAll('.photo').forEach(photo => {
-          photo.addEventListener('click', () => {
-            previewImage.src = photo.dataset.src;
-            previewModal.style.display = 'block';
-          });
-        });
-      }
-
-      // Open gallery modal with preloaded data
-      viewGalleryBtn.addEventListener('click', function() {
-        galleryModal.style.display = 'block';
-        renderFolders();
-        
-        // If we have a current folder, show its photos
-        if (currentFolder) {
-          loadPhotos(currentFolder);
-        } else if (initialFolders.length > 0) {
-          loadPhotos(initialFolders[0]);
-        }
-      });
-
-      // Close gallery modal
-      galleryCloseBtn.addEventListener('click', function() {
-        galleryModal.style.display = 'none';
-      });
-
-      // Close preview modal
-      previewCloseBtn.addEventListener('click', function() {
-        previewModal.style.display = 'none';
-      });
-
-      // Close modals when clicking outside the content
-      window.addEventListener('click', function(event) {
-        if (event.target === galleryModal) {
-          galleryModal.style.display = 'none';
-        }
-        if (event.target === previewModal && !event.target.closest('.preview-content')) {
-          previewModal.style.display = 'none';
-        }
-      });
-
-      // Render folders from preloaded data
-      function renderFolders() {
-        if (initialFolders.length > 0) {
-          galleryFolders.innerHTML = initialFolders.map(folder => `
-            <div class="folder" data-folder="${folder}">
-              <div>📁</div>
-              <div>${folder}</div>
-            </div>
-          `).join('');
-          
-          // Add click event to folders
-          document.querySelectorAll('.folder').forEach(folder => {
-            folder.addEventListener('click', () => {
-              currentFolder = folder.dataset.folder;
-              loadPhotos(currentFolder);
-            });
-          });
-        } else {
-          galleryFolders.innerHTML = '<div class="loading">No folders found</div>';
-        }
-      }
-
-      // Start preloading all folders when the page loads
-      if (initialFolders.length > 0) {
-        preloadAllFolders();
-        // Also preload the first folder immediately for better UX
-        if (initialFolders[0]) {
-          loadPhotos(initialFolders[0]);
-        }
       }
     });
   </script>

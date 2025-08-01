@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qr-photo-upload
+  labels:
+    app: qr-photo-upload
+spec:
+  replicas: 10
+  selector:
+    matchLabels:
+      app: qr-photo-upload
+  template:
+    metadata:
+      labels:
+        app: qr-photo-upload
+    spec:
+      containers:
+      - name: qr-photo-upload
+        image: your-username/qr-photo-upload:latest
+        ports:
+        - containerPort: 8000
+        volumeMounts:
+        - name: uploads
+          mountPath: /app/uploads
+        - name: media
+          mountPath: /app/media
+      volumes:
+      - name: uploads
+        persistentVolumeClaim:
+          claimName: uploads-pvc
+      - name: media
+        persistentVolumeClaim:
+          claimName: media-pvc

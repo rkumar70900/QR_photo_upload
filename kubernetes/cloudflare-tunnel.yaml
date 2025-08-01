@@ -1,0 +1,130 @@
+---
+# Namespace for Cloudflare Tunnel
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cloudflare
+---
+# Service Account for Cloudflare Tunnel
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cloudflare-tunnel
+  namespace: cloudflare
+---
+# Cluster Role
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cloudflare-tunnel
+rules:
+- apiGroups: [""]
+  resources: ["pods", "services", "endpoints"]
+  verbs: ["get", "list", "watch"]
+---
+# Cluster Role Binding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cloudflare-tunnel
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cloudflare-tunnel
+subjects:
+- kind: ServiceAccount
+  name: cloudflare-tunnel
+  namespace: cloudflare
+---
+# Secret for Cloudflare Tunnel credentials
+# Replace with your actual credentials
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cloudflare-tunnel-credentials
+  namespace: cloudflare
+type: Opaque
+stringData:
+  # This is just a placeholder - you'll need to replace this with your actual tunnel credentials
+  # You can get this by running: cloudflared tunnel create <tunnel-name>
+  # The file will be at ~/.cloudflared/<tunnel-id>.json
+  credentials-file: |
+    {
+      "AccountTag": "your-account-tag",
+      "TunnelID": "your-tunnel-id",
+      "TunnelName": "qr-photo-upload",
+      "TunnelSecret": "your-tunnel-secret"
+    }
+---
+# ConfigMap for Cloudflare Tunnel
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloudflare-tunnel-config
+  namespace: cloudflare
+data:
+  config.yaml: |
+    tunnel: your-tunnel-id
+    credentials-file: /etc/cloudflared/credentials/creds.json
+    metrics: 0.0.0.0:2000
+    ingress:
+      - hostname: your-domain.com  # Replace with your domain
+        service: http://qr-photo-upload-service.default.svc.cluster.local:8000
+      - service: http_status:404
+---
+# Deployment for Cloudflare Tunnel
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudflare-tunnel
+  namespace: cloudflare
+  labels:
+    app: cloudflare-tunnel
+spec:
+  replicas: 2  # For high availability
+  selector:
+    matchLabels:
+      app: cloudflare-tunnel
+  template:
+    metadata:
+      labels:
+        app: cloudflare-tunnel
+    spec:
+      serviceAccountName: cloudflare-tunnel
+      containers:
+      - name: cloudflared
+        image: cloudflare/cloudflared:latest
+        args: ["tunnel", "--config", "/etc/cloudflared/config/config.yaml", "run"]
+        ports:
+        - containerPort: 2000
+          name: metrics
+        volumeMounts:
+        - name: config
+          mountPath: /etc/cloudflared/config
+          readOnly: true
+        - name: creds
+          mountPath: /etc/cloudflared/credentials
+          readOnly: true
+      volumes:
+      - name: config
+        configMap:
+          name: cloudflare-tunnel-config
+      - name: creds
+        secret:
+          secretName: cloudflare-tunnel-credentials
+---
+# Service for metrics
+apiVersion: v1
+kind: Service
+metadata:
+  name: cloudflare-tunnel-metrics
+  namespace: cloudflare
+  labels:
+    app: cloudflare-tunnel
+spec:
+  ports:
+    - port: 2000
+      targetPort: 2000
+      name: metrics
+  selector:
+    app: cloudflare-tunnel
