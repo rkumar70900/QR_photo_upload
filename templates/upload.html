@@ -347,6 +347,57 @@
       }, 5000);
     }
 
+    // Helper function to compress file
+    async function compressFile(file) {
+      // Skip compression for files that are already compressed or too small to benefit
+      if (file.size < 1024 * 10) { // Less than 10KB
+        console.log('File too small for compression, skipping');
+        return file;
+      }
+
+      // For browsers that support Compression Streams API
+      if (window.CompressionStream) {
+        try {
+          console.log('Starting compression of', file.name);
+          
+          // Read the file as ArrayBuffer
+          const buffer = await file.arrayBuffer();
+          
+          // Create a stream from the buffer
+          const stream = new ReadableStream({
+            start(controller) {
+              controller.enqueue(new Uint8Array(buffer));
+              controller.close();
+            }
+          });
+          
+          // Compress the stream
+          const compressedStream = stream.pipeThrough(new CompressionStream('gzip'));
+          
+          // Convert compressed stream to blob
+          const compressedBlob = await new Response(compressedStream).blob();
+          
+          console.log('Compression complete. Original size:', file.size, 'Compressed size:', compressedBlob.size);
+          
+          // Only use compression if it actually reduced the size
+          if (compressedBlob.size < file.size * 0.9) { // At least 10% smaller
+            return new File([compressedBlob], file.name, {
+              type: file.type,
+              lastModified: file.lastModified
+            });
+          }
+          console.log('Compression did not reduce size, using original file');
+        } catch (e) {
+          console.warn('Compression failed, falling back to uncompressed upload', e);
+        }
+      } else {
+        console.log('Compression API not supported, using uncompressed upload');
+      }
+      
+      // Return original file if compression failed or wasn't beneficial
+      return file;
+    }
+    
     // Handle form submission
     uploadForm.addEventListener('submit', async function(e) {
       e.preventDefault();
@@ -368,57 +419,59 @@
         return;
       }
 
-      const formData = new FormData(uploadForm);
-      
-      // Show progress bar
+      // Show progress bar and reset UI
       progressWrapper.style.display = 'block';
       progressBar.style.width = '0%';
-      progressBar.textContent = '0%';
+      progressBar.textContent = 'Starting upload...';
       uploadBtn.disabled = true;
       uploadBtn.textContent = 'Uploading...';
       
       try {
-        const xhr = new XMLHttpRequest();
+        let successCount = 0;
+        let errorCount = 0;
         
-        xhr.upload.onprogress = function(event) {
-          if (event.lengthComputable) {
-            const percentComplete = Math.round((event.loaded / event.total) * 100);
-            progressBar.style.width = percentComplete + '%';
-            progressBar.textContent = percentComplete + '%';
+        // Upload each file sequentially
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          console.log(`Uploading file ${i+1}/${files.length}: ${file.name} (${(file.size / (1024 * 1024)).toFixed(2)} MB)`);
+          
+          try {
+            await uploader.uploadFile(file, guestName);
+            successCount++;
+          } catch (error) {
+            console.error(`Error uploading ${file.name}:`, error);
+            errorCount++;
+            continue;
           }
-        };
+        }
         
-        xhr.onload = function() {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            const result = JSON.parse(xhr.responseText);
-            showMessage(result.message || 'Upload successful!', 'success');
-            fileInput.value = '';
-            document.getElementById('guest').value = '';
-          } else {
-            let errorMessage = 'Upload failed';
-            try {
-              const errorResult = JSON.parse(xhr.responseText);
-              errorMessage = errorResult.detail || errorMessage;
-            } catch (e) {
-              console.error('Error parsing error response:', e);
-            }
-            throw new Error(errorMessage);
-          }
-        };
+        // Show final status
+        if (successCount > 0) {
+          showMessage(`Successfully uploaded ${successCount} file(s)${errorCount > 0 ? `, ${errorCount} failed` : ''}`, 
+                     errorCount > 0 ? 'warning' : 'success');
+        } else if (errorCount > 0) {
+          showMessage('Upload failed for all files', 'error');
+        }
         
-        xhr.onerror = function() {
-          throw new Error('Network error occurred during upload');
-        };
-        
-        xhr.open('POST', '/upload', true);
-        xhr.send(formData);
-        
+        // Reset form on success
+        if (errorCount === 0) {
+          fileInput.value = '';
+          document.getElementById('guest').value = '';
+        }
       } catch (error) {
-        console.error('Upload error:', error);
-        showMessage(error.message || 'An error occurred during upload', 'error');
+        console.error('Upload process failed:', error);
+        showMessage('Upload process failed. Please try again.', 'error');
       } finally {
+        // Reset UI
         uploadBtn.disabled = false;
         uploadBtn.textContent = 'Upload';
+        
+        // Only hide progress if all uploads are done
+        if (!uploader.activeUploads) {
+          setTimeout(() => {
+            progressWrapper.style.display = 'none';
+          }, 1000);
+        }
       }
     });
   </script>

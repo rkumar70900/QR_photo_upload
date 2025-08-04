@@ -4,11 +4,11 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import os
 import shutil
-from typing import List, Dict, Optional
+from typing import List
 import re
 from pathlib import Path
 
-UPLOAD_DIR = "/Users/raj/Documents/GitHub/QR_photo_upload/uploads"
+UPLOAD_DIR = "/app/uploads"
 MAX_FILE_SIZE = 1024 * 1024 * 1024  # 1GB in bytes
 ALLOWED_EXTENSIONS = {
     'image': ['jpg', 'jpeg', 'png', 'gif', 'webp'],
