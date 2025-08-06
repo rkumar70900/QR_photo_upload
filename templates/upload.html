@@ -1,37 +1,635 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Upload Your Photo</title>
-    <link rel="stylesheet" href="/static/styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Photo & Video Upload</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bitcount+Prop+Single:wght@100..900&family=Playwrite+AU+QLD:wght@100..400&display=swap" rel="stylesheet">
+ <style>
+    /* Base styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Bitcount Prop Single', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      position: relative;
+      background-color: #f5f5f5;
+    }
+
+    /* Background image for mobile (portrait) */
+    @media (max-width: 767px) {
+      body {
+        background-image: url('/static/images/desktop.HEIC');
+      }
+    }
+
+    /* Background image for desktop (landscape) */
+    @media (min-width: 768px) {
+      body {
+        background-image: url('/static/images/desktop.HEIC');
+      }
+    }
+
+    /* Overlay for better text readability */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.3); /* Adjust opacity as needed */
+      z-index: 0;
+    }
+
+    .container {
+      width: auto;
+      max-width: 90%;
+      min-width: 300px;
+      padding: 2rem;
+      background-color: rgba(255, 255, 255, 0.9); /* Semi-transparent white */
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+      position: relative;
+      z-index: 1;
+      margin: 1rem;
+    }
+
+    h1 {
+      font-family: 'Playwrite AU QLD', sans-serif;
+      text-align: center;
+      color: #333;
+      margin-bottom: 1.5rem;
+      font-size: 2rem;
+      line-height: 1.2;
+      padding: 0 1rem;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    label {
+      font-weight: 600;
+      color: #333;
+    }
+
+    input[type="text"],
+    input[type="file"] {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background-color: rgba(255, 255, 255, 0.8);
+    }
+
+    button {
+      background-color: #007bff;
+      color: white;
+      padding: 0.75rem;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    button:disabled {
+      background-color: #6c757d;
+      cursor: not-allowed;
+    }
+
+    .progress {
+      width: 100%;
+      height: 20px;
+      background-color: rgba(0, 0, 0, 0.1);
+      border-radius: 10px;
+      margin: 1rem 0;
+      overflow: hidden;
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #4CAF50, #8BC34A);
+      color: white;
+      text-align: center;
+      line-height: 20px;
+      font-size: 12px;
+      font-weight: bold;
+      transition: width 0.3s ease;
+      text-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .message {
+      margin-top: 1rem;
+      padding: 0.75rem;
+      border-radius: 4px;
+      display: none;
+      text-align: center;
+    }
+
+    .success {
+      background-color: rgba(212, 237, 218, 0.9);
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .error {
+      background-color: rgba(248, 215, 218, 0.9);
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    /* Gallery Styles */
+    .gallery-btn {
+        display: block;
+        width: 100%;
+        padding: 12px;
+        margin-top: 20px;
+        background-color: #6c757d;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+    .gallery-btn:hover {
+        background-color: #5a6268;
+    }
+
+    /* Modal Styles */
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+        z-index: 1000;
+        overflow: auto;
+    }
+
+    .modal-content, .preview-content {
+        background-color: #fefefe;
+        margin: 5% auto;
+        padding: 20px;
+        border-radius: 8px;
+        max-width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+        position: relative;
+    }
+
+    .preview-content {
+        text-align: center;
+        max-width: 90%;
+        max-height: 90vh;
+    }
+
+    .preview-content img {
+        max-width: 100%;
+        max-height: 80vh;
+        object-fit: contain;
+    }
+
+    .close-btn {
+        position: absolute;
+        top: 10px;
+        right: 20px;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    /* Gallery Styles */
+    .folders-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 15px;
+        margin: 20px 0;
+    }
+
+    .folder {
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+        text-align: center;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .folder:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .photos-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 15px;
+        margin-top: 20px;
+    }
+
+    .photo {
+        position: relative;
+        padding-top: 100%;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+        overflow: hidden;
+        cursor: pointer;
+    }
+
+    .photo img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s;
+    }
+
+    .photo:hover img {
+        transform: scale(1.05);
+    }
+
+    .loading {
+        text-align: center;
+        padding: 20px;
+        color: #6c757d;
+    }
+  </style>
 </head>
 <body>
-    <h2>📸 Upload Your Photo</h2>
-    {% if message %}
-        <p style="color: green;">{{ message }}</p>
-    {% endif %}
-    {% if error %}
-        <p style="color: red;">{{ error }}</p>
-    {% endif %}
-    <form action="/upload" method="post" enctype="multipart/form-data">
-        <label for="guest">Your Name:</label><br>
-        <input type="text" id="guest" name="guest" required><br><br>
+  <div class="container">
+    <h1>Celebrating Mr. and Mrs. K</h1>
+    <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data">
+      <label for="guest">Your Name:</label>
+      <input type="text" id="guest" name="guest" required>
+      <label for="media">Select Photos or Videos (Max 20, 1GB max per file):</label>
+      <input type="file" id="media" name="files" accept="image/*,video/*" multiple required>
+      <button type="submit" id="uploadBtn">Upload</button>
 
-        <label for="photos">Select Photos (Max 20):</label><br>
-        <input type="file" id="photos" name="photos" accept="image/*" multiple required><br><br>
+      <div class="progress" style="display: none;">
+        <div class="progress-bar" id="progressBar">0%</div>
+      </div>
 
-        <button type="submit">Upload Photo</button>
+      <div class="message" id="message"></div>
     </form>
-</body>
-</html>
-
-<script>
-    const photoInput = document.getElementById('photos');
     
-    photoInput.addEventListener('change', function (event) {
-      const files = event.target.files;
+    <button id="viewGalleryBtn" class="gallery-btn">View Gallery</button>
+  </div>
+
+  <!-- Gallery Modal -->
+  <div id="galleryModal" class="modal">
+      <div class="modal-content">
+          <span class="close-btn">&times;</span>
+          <h2>Photo Gallery</h2>
+          <div id="galleryFolders" class="folders-container">
+              <!-- Folders will be loaded here -->
+              <div class="loading">Loading folders...</div>
+          </div>
+          <div id="galleryPhotos" class="photos-container">
+              <!-- Photos will be loaded here when a folder is selected -->
+          </div>
+      </div>
+  </div>
+
+  <!-- Photo Preview Modal -->
+  <div id="previewModal" class="modal">
+      <div class="preview-content">
+          <span class="close-btn">&times;</span>
+          <img id="previewImage" src="" alt="Preview">
+      </div>
+  </div>
+
+  <script>
+    const uploadForm = document.getElementById('uploadForm');
+    const fileInput = document.getElementById('media');
+    const progressBar = document.getElementById('progressBar');
+    const progressWrapper = document.querySelector('.progress');
+    const message = document.getElementById('message');
+    const uploadBtn = document.getElementById('uploadBtn');
+
+    // Function to show message
+    function showMessage(text, type) {
+      message.textContent = text;
+      message.className = `message ${type}`;
+      message.style.display = 'block';
+      
+      // Hide message after 5 seconds
+      setTimeout(() => {
+        message.style.display = 'none';
+      }, 5000);
+    }
+
+    // Helper function to compress file
+    async function compressFile(file) {
+      // Skip compression for files that are already compressed or too small to benefit
+      if (file.size < 1024 * 10) { // Less than 10KB
+        console.log('File too small for compression, skipping');
+        return file;
+      }
+
+      // For browsers that support Compression Streams API
+      if (window.CompressionStream) {
+        try {
+          console.log('Starting compression of', file.name);
+          
+          // Read the file as ArrayBuffer
+          const buffer = await file.arrayBuffer();
+          
+          // Create a stream from the buffer
+          const stream = new ReadableStream({
+            start(controller) {
+              controller.enqueue(new Uint8Array(buffer));
+              controller.close();
+            }
+          });
+          
+          // Compress the stream
+          const compressedStream = stream.pipeThrough(new CompressionStream('gzip'));
+          
+          // Convert compressed stream to blob
+          const compressedBlob = await new Response(compressedStream).blob();
+          
+          console.log('Compression complete. Original size:', file.size, 'Compressed size:', compressedBlob.size);
+          
+          // Only use compression if it actually reduced the size
+          if (compressedBlob.size < file.size * 0.9) { // At least 10% smaller
+            return new File([compressedBlob], file.name, {
+              type: file.type,
+              lastModified: file.lastModified
+            });
+          }
+          console.log('Compression did not reduce size, using original file');
+        } catch (e) {
+          console.warn('Compression failed, falling back to uncompressed upload', e);
+        }
+      } else {
+        console.log('Compression API not supported, using uncompressed upload');
+      }
+      
+      // Return original file if compression failed or wasn't beneficial
+      return file;
+    }
+    
+    // Handle form submission
+    uploadForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const guestName = document.getElementById('guest').value.trim();
+      if (!guestName) {
+        showMessage('Please enter your name', 'error');
+        return;
+      }
+      
+      const files = fileInput.files;
+      if (files.length === 0) {
+        showMessage('Please select at least one file', 'error');
+        return;
+      }
+
       if (files.length > 20) {
-        alert('Please select 20 or fewer photos.');
-        event.target.value = ''; // Reset file input
+        showMessage('You can upload a maximum of 20 files.', 'error');
+        return;
+      }
+
+      // Show progress bar and reset UI
+      progressWrapper.style.display = 'block';
+      progressBar.style.width = '0%';
+      progressBar.textContent = 'Starting upload...';
+      uploadBtn.disabled = true;
+      uploadBtn.textContent = 'Uploading...';
+      
+      try {
+        let successCount = 0;
+        let errorCount = 0;
+        
+        // Upload each file sequentially
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          console.log(`Uploading file ${i+1}/${files.length}: ${file.name} (${(file.size / (1024 * 1024)).toFixed(2)} MB)`);
+          
+          try {
+            await uploader.uploadFile(file, guestName);
+            successCount++;
+          } catch (error) {
+            console.error(`Error uploading ${file.name}:`, error);
+            errorCount++;
+            continue;
+          }
+        }
+        
+        // Show final status
+        if (successCount > 0) {
+          showMessage(`Successfully uploaded ${successCount} file(s)${errorCount > 0 ? `, ${errorCount} failed` : ''}`, 
+                     errorCount > 0 ? 'warning' : 'success');
+        } else if (errorCount > 0) {
+          showMessage('Upload failed for all files', 'error');
+        }
+        
+        // Reset form on success
+        if (errorCount === 0) {
+          fileInput.value = '';
+          document.getElementById('guest').value = '';
+        }
+      } catch (error) {
+        console.error('Upload process failed:', error);
+        showMessage('Upload process failed. Please try again.', 'error');
+      } finally {
+        // Reset UI
+        uploadBtn.disabled = false;
+        uploadBtn.textContent = 'Upload';
+        
+        // Only hide progress if all uploads are done
+        if (!uploader.activeUploads) {
+          setTimeout(() => {
+            progressWrapper.style.display = 'none';
+          }, 1000);
+        }
       }
     });
-</script>
+  </script>
+
+  <script>
+    // Preload the initial folders from server-side rendering
+    const initialFolders = {{ initial_folders|tojson|safe }};
+    let currentFolder = '';
+    let preloadedImages = new Map(); // To track preloaded images
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const galleryModal = document.getElementById('galleryModal');
+      const previewModal = document.getElementById('previewModal');
+      const viewGalleryBtn = document.getElementById('viewGalleryBtn');
+      const galleryFolders = document.getElementById('galleryFolders');
+      const galleryPhotos = document.getElementById('galleryPhotos');
+      const previewImage = document.getElementById('previewImage');
+
+      // Get close buttons by their parent modal
+      const galleryCloseBtn = galleryModal.querySelector('.close-btn');
+      const previewCloseBtn = previewModal.querySelector('.close-btn');
+
+      // Preload all folders' images in the background
+      function preloadAllFolders() {
+        if (initialFolders.length === 0) return;
+        
+        initialFolders.forEach(folder => {
+          fetch(`/api/gallery/photos/${encodeURIComponent(folder)}`)
+            .then(response => response.json())
+            .then(data => {
+              if (data.photos && data.photos.length > 0) {
+                // Store the preloaded photos
+                preloadedImages.set(folder, data.photos);
+                
+                // Preload images in the background
+                data.photos.forEach(photo => {
+                  const img = new Image();
+                  img.src = photo.url;
+                });
+              }
+            })
+            .catch(console.error);
+        });
+      }
+
+      // Load photos in a folder, using preloaded data if available
+      async function loadPhotos(folder) {
+        if (!folder) return;
+        
+        galleryPhotos.innerHTML = '<div class="loading">Loading photos...</div>';
+        currentFolder = folder;
+        
+        // If we have preloaded data, use it immediately
+        if (preloadedImages.has(folder)) {
+          const photos = preloadedImages.get(folder);
+          renderPhotos(photos);
+          return;
+        }
+        
+        // Otherwise, fetch from the server
+        try {
+          const response = await fetch(`/api/gallery/photos/${encodeURIComponent(folder)}`);
+          const data = await response.json();
+          
+          if (data.photos && data.photos.length > 0) {
+            // Cache the results for future use
+            preloadedImages.set(folder, data.photos);
+            renderPhotos(data.photos);
+          } else {
+            galleryPhotos.innerHTML = '<div class="loading">No photos found in this folder</div>';
+          }
+        } catch (error) {
+          console.error('Error loading photos:', error);
+          galleryPhotos.innerHTML = '<div class="loading">Error loading photos</div>';
+        }
+      }
+      
+      // Helper function to render photos
+      function renderPhotos(photos) {
+        galleryPhotos.innerHTML = photos.map(photo => `
+          <div class="photo" data-src="${photo.url}">
+            <img src="${photo.url}" alt="${photo.name}" loading="lazy">
+          </div>
+        `).join('');
+        
+        // Add click event to photos
+        document.querySelectorAll('.photo').forEach(photo => {
+          photo.addEventListener('click', () => {
+            previewImage.src = photo.dataset.src;
+            previewModal.style.display = 'block';
+          });
+        });
+      }
+
+      // Open gallery modal with preloaded data
+      viewGalleryBtn.addEventListener('click', function() {
+        galleryModal.style.display = 'block';
+        renderFolders();
+        
+        // If we have a current folder, show its photos
+        if (currentFolder) {
+          loadPhotos(currentFolder);
+        } else if (initialFolders.length > 0) {
+          loadPhotos(initialFolders[0]);
+        }
+      });
+
+      // Close gallery modal
+      galleryCloseBtn.addEventListener('click', function() {
+        galleryModal.style.display = 'none';
+      });
+
+      // Close preview modal
+      previewCloseBtn.addEventListener('click', function() {
+        previewModal.style.display = 'none';
+      });
+
+      // Close modals when clicking outside the content
+      window.addEventListener('click', function(event) {
+        if (event.target === galleryModal) {
+          galleryModal.style.display = 'none';
+        }
+        if (event.target === previewModal && !event.target.closest('.preview-content')) {
+          previewModal.style.display = 'none';
+        }
+      });
+
+      // Render folders from preloaded data
+      function renderFolders() {
+        if (initialFolders.length > 0) {
+          galleryFolders.innerHTML = initialFolders.map(folder => `
+            <div class="folder" data-folder="${folder}">
+              <div>📁</div>
+              <div>${folder}</div>
+            </div>
+          `).join('');
+          
+          // Add click event to folders
+          document.querySelectorAll('.folder').forEach(folder => {
+            folder.addEventListener('click', () => {
+              currentFolder = folder.dataset.folder;
+              loadPhotos(currentFolder);
+            });
+          });
+        } else {
+          galleryFolders.innerHTML = '<div class="loading">No folders found</div>';
+        }
+      }
+
+      // Start preloading all folders when the page loads
+      if (initialFolders.length > 0) {
+        preloadAllFolders();
+        // Also preload the first folder immediately for better UX
+        if (initialFolders[0]) {
+          loadPhotos(initialFolders[0]);
+        }
+      }
+    });
+  </script>
+</body>
+</html>
