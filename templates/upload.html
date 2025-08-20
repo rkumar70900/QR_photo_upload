@@ -3,12 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Photo & Video Upload</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bitcount+Prop+Single:wght@100..900&family=Playwrite+AU+QLD:wght@100..400&display=swap" rel="stylesheet">
- <style>
-    /* Base styles */
+  <title>Photo Upload</title>
+  <link href="https://fonts.googleapis.com/css2?family=Edu+NSW+ACT+Cursive:wght@400..700&family=M+PLUS+Rounded+1c:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #4F46E5;
+      --primary-hover: #4338CA;
+      --error: #DC2626;
+      --success: #10B981;
+      --gray-100: #F3F4F6;
+      --gray-200: #E5E7EB;
+      --gray-700: #374151;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
     * {
       margin: 0;
       padding: 0;
@@ -16,619 +24,547 @@
     }
 
     body {
-      font-family: 'Bitcount Prop Single', sans-serif;
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      position: relative;
-      background-color: #f5f5f5;
-    }
-
-    /* Background image for mobile (portrait) */
-    @media (max-width: 767px) {
-      body {
-        background-image: url('/static/images/desktop.HEIC');
-      }
-    }
-
-    /* Background image for desktop (landscape) */
-    @media (min-width: 768px) {
-      body {
-        background-image: url('/static/images/desktop.HEIC');
-      }
-    }
-
-    /* Overlay for better text readability */
-    body::before {
-      content: '';
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: rgba(0, 0, 0, 0.3); /* Adjust opacity as needed */
-      z-index: 0;
+      font-family: 'M PLUS Rounded 1c', -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.5;
+      color: #111827;
+      background-color: #F9FAFB;
     }
 
     .container {
-      width: auto;
-      max-width: 90%;
-      min-width: 300px;
+      max-width: 800px;
+      margin: 0 auto;
       padding: 2rem;
-      background-color: rgba(255, 255, 255, 0.9); /* Semi-transparent white */
-      border-radius: 12px;
-      box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-      position: relative;
-      z-index: 1;
-      margin: 1rem;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 2.5rem;
     }
 
     h1 {
-      font-family: 'Playwrite AU QLD', sans-serif;
-      text-align: center;
-      color: #333;
-      margin-bottom: 1.5rem;
-      font-size: 2rem;
-      line-height: 1.2;
-      padding: 0 1rem;
+      font-family: 'Edu NSW ACT Cursive', cursive;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #111827;
+      margin-bottom: 0.5rem;
     }
 
-    form {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
+    .subtitle {
+      color: #6B7280;
+      font-size: 1.125rem;
+    }
+
+    .upload-card {
+      background: white;
+      border-radius: 0.75rem;
+      padding: 2rem;
+      box-shadow: var(--shadow);
+      margin-bottom: 2rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
     }
 
     label {
-      font-weight: 600;
-      color: #333;
+      display: block;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+      color: #374151;
     }
 
-    input[type="text"],
-    input[type="file"] {
+    input[type="text"] {
       width: 100%;
-      padding: 0.75rem;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      background-color: rgba(255, 255, 255, 0.8);
-    }
-
-    button {
-      background-color: #007bff;
-      color: white;
-      padding: 0.75rem;
-      border: none;
-      border-radius: 4px;
+      padding: 0.75rem 1rem;
+      border: 1px solid #D1D5DB;
+      border-radius: 0.5rem;
       font-size: 1rem;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+    }
+
+    .file-upload {
+      border: 2px dashed #D1D5DB;
+      border-radius: 0.75rem;
+      padding: 2.5rem 1.5rem;
+      text-align: center;
       cursor: pointer;
-      transition: background-color 0.3s;
+      transition: all 0.2s;
+      margin-bottom: 1.5rem;
     }
 
-    button:hover {
-      background-color: #0056b3;
+    .file-upload:hover {
+      border-color: var(--primary);
+      background-color: #F8FAFF;
     }
 
-    button:disabled {
-      background-color: #6c757d;
-      cursor: not-allowed;
+    .file-upload input[type="file"] {
+      display: none;
     }
 
-    .progress {
-      width: 100%;
-      height: 20px;
-      background-color: rgba(0, 0, 0, 0.1);
-      border-radius: 10px;
-      margin: 1rem 0;
+    .file-upload-icon {
+      font-size: 2.5rem;
+      color: var(--primary);
+      margin-bottom: 1rem;
+    }
+
+    .file-upload-text {
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+
+    .file-upload-hint {
+      color: #6B7280;
+      font-size: 0.875rem;
+    }
+
+    .file-list {
+      margin-top: 1rem;
+    }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      padding: 0.75rem;
+      background: var(--gray-100);
+      border-radius: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .file-icon {
+      margin-right: 0.75rem;
+      color: var(--primary);
+    }
+
+    .file-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .file-name {
+      font-weight: 500;
+      white-space: nowrap;
       overflow: hidden;
-      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+      text-overflow: ellipsis;
+    }
+
+    .file-size {
+      font-size: 0.75rem;
+      color: #6B7280;
+    }
+
+    .remove-file {
+      color: #9CA3AF;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0.25rem;
+      border-radius: 0.25rem;
+      transition: all 0.2s;
+    }
+
+    .remove-file:hover {
+      color: var(--error);
+      background: #FEE2E2;
+    }
+
+    .progress-container {
+      margin-top: 1.5rem;
+      display: none;
     }
 
     .progress-bar {
+      height: 8px;
+      background: #E5E7EB;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 0.5rem;
+    }
+
+    .progress-fill {
       height: 100%;
       width: 0%;
-      background: linear-gradient(90deg, #4CAF50, #8BC34A);
-      color: white;
-      text-align: center;
-      line-height: 20px;
-      font-size: 12px;
-      font-weight: bold;
+      background: var(--primary);
+      border-radius: 4px;
       transition: width 0.3s ease;
-      text-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .progress-text {
+      text-align: center;
+      font-size: 0.875rem;
+      color: #6B7280;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      font-weight: 500;
+      border: none;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      width: 100%;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+    }
+
+    .btn:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
     }
 
     .message {
+      padding: 1rem;
+      border-radius: 0.5rem;
       margin-top: 1rem;
-      padding: 0.75rem;
-      border-radius: 4px;
-      display: none;
-      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
 
-    .success {
-      background-color: rgba(212, 237, 218, 0.9);
-      color: #155724;
-      border: 1px solid #c3e6cb;
+    .message.success {
+      background: #ECFDF5;
+      color: var(--success);
+      border: 1px solid #A7F3D0;
     }
 
-    .error {
-      background-color: rgba(248, 215, 218, 0.9);
-      color: #721c24;
-      border: 1px solid #f5c6cb;
+    .message.error {
+      background: #FEF2F2;
+      color: var(--error);
+      border: 1px solid #FECACA;
     }
 
-    /* Gallery Styles */
-    .gallery-btn {
-        display: block;
-        width: 100%;
-        padding: 12px;
-        margin-top: 20px;
-        background-color: #6c757d;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        font-size: 1rem;
-        cursor: pointer;
-        transition: background-color 0.3s;
+    .message-close {
+      background: none;
+      border: none;
+      color: inherit;
+      cursor: pointer;
+      font-size: 1.25rem;
+      line-height: 1;
     }
 
-    .gallery-btn:hover {
-        background-color: #5a6268;
-    }
-
-    /* Modal Styles */
-    .modal {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.8);
-        z-index: 1000;
-        overflow: auto;
-    }
-
-    .modal-content, .preview-content {
-        background-color: #fefefe;
-        margin: 5% auto;
-        padding: 20px;
-        border-radius: 8px;
-        max-width: 90%;
-        max-height: 80vh;
-        overflow-y: auto;
-        position: relative;
-    }
-
-    .preview-content {
-        text-align: center;
-        max-width: 90%;
-        max-height: 90vh;
-    }
-
-    .preview-content img {
-        max-width: 100%;
-        max-height: 80vh;
-        object-fit: contain;
-    }
-
-    .close-btn {
-        position: absolute;
-        top: 10px;
-        right: 20px;
-        font-size: 28px;
-        font-weight: bold;
-        cursor: pointer;
-    }
-
-    /* Gallery Styles */
-    .folders-container {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        gap: 15px;
-        margin: 20px 0;
-    }
-
-    .folder {
-        padding: 15px;
-        background-color: #f8f9fa;
-        border-radius: 4px;
-        text-align: center;
-        cursor: pointer;
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-
-    .folder:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    .photos-container {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        gap: 15px;
-        margin-top: 20px;
-    }
-
-    .photo {
-        position: relative;
-        padding-top: 100%;
-        background-color: #f8f9fa;
-        border-radius: 4px;
-        overflow: hidden;
-        cursor: pointer;
-    }
-
-    .photo img {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        transition: transform 0.3s;
-    }
-
-    .photo:hover img {
-        transform: scale(1.05);
-    }
-
-    .loading {
-        text-align: center;
-        padding: 20px;
-        color: #6c757d;
+    @media (max-width: 640px) {
+      .container {
+        padding: 1rem;
+      }
+      
+      .upload-card {
+        padding: 1.5rem;
+      }
+      
+      h1 {
+        font-size: 1.5rem;
+      }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Celebrating Mr. and Mrs. K</h1>
-    <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data">
-      <label for="guest">Your Name:</label>
-      <input type="text" id="guest" name="guest" required>
-      <label for="media">Select Photos or Videos (Max 20, 1GB max per file):</label>
-      <input type="file" id="media" name="files" accept="image/*,video/*" multiple required>
-      <button type="submit" id="uploadBtn">Upload</button>
+    <header class="header">
+      <h1>Celebrating Mr and Mrs K</h1>
+      <p class="subtitle">Share your favorite moments with us</p>
+      <nav style="margin-top: 1rem;">
+        <a href="/gallery" style="color: #4F46E5; text-decoration: none; font-weight: 500; padding: 0.5rem 1rem; border-radius: 0.375rem; background: #EEF2FF;">
+          View Gallery
+        </a>
+      </nav>
+    </header>
 
-      <div class="progress" style="display: none;">
-        <div class="progress-bar" id="progressBar">0%</div>
-      </div>
-
-      <div class="message" id="message"></div>
-    </form>
-    
-    <button id="viewGalleryBtn" class="gallery-btn">View Gallery</button>
-  </div>
-
-  <!-- Gallery Modal -->
-  <div id="galleryModal" class="modal">
-      <div class="modal-content">
-          <span class="close-btn">&times;</span>
-          <h2>Photo Gallery</h2>
-          <div id="galleryFolders" class="folders-container">
-              <!-- Folders will be loaded here -->
-              <div class="loading">Loading folders...</div>
+    <main>
+      <div class="upload-card">
+        <form id="uploadForm">
+          <div class="form-group">
+            <label for="guest">Your Name</label>
+            <input type="text" id="guest" name="guest" placeholder="Enter your name" required>
           </div>
-          <div id="galleryPhotos" class="photos-container">
-              <!-- Photos will be loaded here when a folder is selected -->
-          </div>
-      </div>
-  </div>
 
-  <!-- Photo Preview Modal -->
-  <div id="previewModal" class="modal">
-      <div class="preview-content">
-          <span class="close-btn">&times;</span>
-          <img id="previewImage" src="" alt="Preview">
+          <div class="form-group">
+            <label>Your Photos</label>
+            <div class="file-upload" id="dropZone" onclick="document.getElementById('fileInput').click()">
+              <input type="file" id="fileInput" accept="image/*,video/*" multiple style="display: none;">
+              <div class="file-upload-icon">📷</div>
+              <div class="file-upload-text">Drag & drop your files here or click to browse</div>
+              <div class="file-upload-hint">Supports JPG, PNG, GIF, MP4, HEIF (max 20 files, 1GB per file)</div>
+            </div>
+            <div id="fileList" class="file-list"></div>
+          </div>
+
+          <div id="progressContainer" class="progress-container">
+            <div class="progress-bar">
+              <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text" id="progressText">Preparing to upload...</div>
+          </div>
+
+          <button type="submit" class="btn btn-primary" id="uploadBtn" disabled>
+            Upload Files
+          </button>
+        </form>
+
+        <div id="message" class="message" style="display: none;">
+          <span id="messageText"></span>
+          <button class="message-close" id="closeMessage">&times;</button>
+        </div>
       </div>
+    </main>
   </div>
 
   <script>
-    const uploadForm = document.getElementById('uploadForm');
-    const fileInput = document.getElementById('media');
-    const progressBar = document.getElementById('progressBar');
-    const progressWrapper = document.querySelector('.progress');
-    const message = document.getElementById('message');
-    const uploadBtn = document.getElementById('uploadBtn');
+    document.addEventListener('DOMContentLoaded', () => {
+      const fileInput = document.getElementById('fileInput');
+      const dropZone = document.getElementById('dropZone');
+      const fileList = document.getElementById('fileList');
+      const uploadForm = document.getElementById('uploadForm');
+      const uploadBtn = document.getElementById('uploadBtn');
+      const progressContainer = document.getElementById('progressContainer');
+      const progressFill = document.getElementById('progressFill');
+      const progressText = document.getElementById('progressText');
+      const message = document.getElementById('message');
+      const messageText = document.getElementById('messageText');
+      const closeMessage = document.getElementById('closeMessage');
 
-    // Function to show message
-    function showMessage(text, type) {
-      message.textContent = text;
-      message.className = `message ${type}`;
-      message.style.display = 'block';
-      
-      // Hide message after 5 seconds
-      setTimeout(() => {
-        message.style.display = 'none';
-      }, 5000);
-    }
+      let files = [];
+      const MAX_FILE_SIZE = 1024 * 1024 * 1024; // 1GB
+      const MAX_FILES = 20;
 
-    // Helper function to compress file
-    async function compressFile(file) {
-      // Skip compression for files that are already compressed or too small to benefit
-      if (file.size < 1024 * 10) { // Less than 10KB
-        console.log('File too small for compression, skipping');
-        return file;
+      // Show message
+      function showMessage(text, type = 'info') {
+        messageText.textContent = text;
+        message.className = `message ${type}`;
+        message.style.display = 'flex';
       }
 
-      // For browsers that support Compression Streams API
-      if (window.CompressionStream) {
+      // Hide message
+      function hideMessage() {
+        message.style.display = 'none';
+      }
+
+      // Close message when clicking the close button
+      closeMessage.addEventListener('click', hideMessage);
+
+      // Format file size
+      function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+      }
+
+      // Update file list display
+      function updateFileList() {
+        fileList.innerHTML = '';
+        
+        if (files.length === 0) {
+          uploadBtn.disabled = true;
+          return;
+        }
+
+        uploadBtn.disabled = false;
+        
+        files.forEach((file, index) => {
+          const fileItem = document.createElement('div');
+          fileItem.className = 'file-item';
+          fileItem.innerHTML = `
+            <div class="file-icon">📄</div>
+            <div class="file-info">
+              <div class="file-name" title="${file.name}">${file.name}</div>
+              <div class="file-size">${formatFileSize(file.size)}</div>
+            </div>
+            <button class="remove-file" data-index="${index}">&times;</button>
+          `;
+          fileList.appendChild(fileItem);
+        });
+
+        // Add event listeners to remove buttons
+        document.querySelectorAll('.remove-file').forEach(button => {
+          button.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const index = parseInt(button.dataset.index);
+            files.splice(index, 1);
+            updateFileList();
+          });
+        });
+      }
+
+      // Handle file selection
+      function handleFiles(selectedFiles) {
+        const newFiles = Array.from(selectedFiles);
+        
+        // Check total files count
+        if (files.length + newFiles.length > MAX_FILES) {
+          showMessage(`You can upload a maximum of ${MAX_FILES} files.`, 'error');
+          return;
+        }
+
+        // Validate each file
+        for (const file of newFiles) {
+          // Check file size
+          if (file.size > MAX_FILE_SIZE) {
+            showMessage(`File too large: ${file.name} (max 1GB)`, 'error');
+            continue;
+          }
+          
+          // Check file type
+          const fileType = file.type.split('/')[0];
+          if (fileType !== 'image' && fileType !== 'video') {
+            showMessage(`Unsupported file type: ${file.name}`, 'error');
+            continue;
+          }
+          
+          files.push(file);
+        }
+        
+        updateFileList();
+      }
+
+      // File input change event
+      fileInput.addEventListener('change', (e) => {
+        handleFiles(e.target.files);
+        // Reset the input to allow selecting the same file again if needed
+        fileInput.value = '';
+      });
+
+      // Drag and drop events
+      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+      });
+
+      function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+
+      ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, highlight, false);
+      });
+
+      ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, unhighlight, false);
+      });
+
+      function highlight() {
+        dropZone.style.borderColor = '#4F46E5';
+        dropZone.style.backgroundColor = '#F8FAFF';
+      }
+
+      function unhighlight() {
+        dropZone.style.borderColor = '#D1D5DB';
+        dropZone.style.backgroundColor = '';
+      }
+
+      // Handle dropped files
+      dropZone.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        handleFiles(files);
+      });
+
+      // Form submission
+      uploadForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const guestName = document.getElementById('guest').value.trim();
+        if (!guestName) {
+          showMessage('Please enter your name', 'error');
+          return;
+        }
+
+        if (files.length === 0) {
+          showMessage('Please select at least one file', 'error');
+          return;
+        }
+
+        // Prepare form data
+        const formData = new FormData();
+        formData.append('guest', guestName);
+        
+        // Add files to form data
+        files.forEach((file, index) => {
+          formData.append('files', file);
+        });
+
+        // Show progress
+        progressContainer.style.display = 'block';
+        uploadBtn.disabled = true;
+        uploadBtn.textContent = 'Uploading...';
+        
         try {
-          console.log('Starting compression of', file.name);
+          const xhr = new XMLHttpRequest();
           
-          // Read the file as ArrayBuffer
-          const buffer = await file.arrayBuffer();
-          
-          // Create a stream from the buffer
-          const stream = new ReadableStream({
-            start(controller) {
-              controller.enqueue(new Uint8Array(buffer));
-              controller.close();
+          // Progress tracking
+          xhr.upload.addEventListener('progress', (e) => {
+            if (e.lengthComputable) {
+              const percent = Math.round((e.loaded / e.total) * 100);
+              progressFill.style.width = `${percent}%`;
+              progressText.textContent = `Uploading: ${percent}%`;
             }
           });
           
-          // Compress the stream
-          const compressedStream = stream.pipeThrough(new CompressionStream('gzip'));
-          
-          // Convert compressed stream to blob
-          const compressedBlob = await new Response(compressedStream).blob();
-          
-          console.log('Compression complete. Original size:', file.size, 'Compressed size:', compressedBlob.size);
-          
-          // Only use compression if it actually reduced the size
-          if (compressedBlob.size < file.size * 0.9) { // At least 10% smaller
-            return new File([compressedBlob], file.name, {
-              type: file.type,
-              lastModified: file.lastModified
-            });
-          }
-          console.log('Compression did not reduce size, using original file');
-        } catch (e) {
-          console.warn('Compression failed, falling back to uncompressed upload', e);
-        }
-      } else {
-        console.log('Compression API not supported, using uncompressed upload');
-      }
-      
-      // Return original file if compression failed or wasn't beneficial
-      return file;
-    }
-    
-    // Handle form submission
-    uploadForm.addEventListener('submit', async function(e) {
-      e.preventDefault();
-      
-      const guestName = document.getElementById('guest').value.trim();
-      if (!guestName) {
-        showMessage('Please enter your name', 'error');
-        return;
-      }
-      
-      const files = fileInput.files;
-      if (files.length === 0) {
-        showMessage('Please select at least one file', 'error');
-        return;
-      }
-
-      if (files.length > 20) {
-        showMessage('You can upload a maximum of 20 files.', 'error');
-        return;
-      }
-
-      // Show progress bar and reset UI
-      progressWrapper.style.display = 'block';
-      progressBar.style.width = '0%';
-      progressBar.textContent = 'Starting upload...';
-      uploadBtn.disabled = true;
-      uploadBtn.textContent = 'Uploading...';
-      
-      try {
-        let successCount = 0;
-        let errorCount = 0;
-        
-        // Upload each file sequentially
-        for (let i = 0; i < files.length; i++) {
-          const file = files[i];
-          console.log(`Uploading file ${i+1}/${files.length}: ${file.name} (${(file.size / (1024 * 1024)).toFixed(2)} MB)`);
-          
-          try {
-            await uploader.uploadFile(file, guestName);
-            successCount++;
-          } catch (error) {
-            console.error(`Error uploading ${file.name}:`, error);
-            errorCount++;
-            continue;
-          }
-        }
-        
-        // Show final status
-        if (successCount > 0) {
-          showMessage(`Successfully uploaded ${successCount} file(s)${errorCount > 0 ? `, ${errorCount} failed` : ''}`, 
-                     errorCount > 0 ? 'warning' : 'success');
-        } else if (errorCount > 0) {
-          showMessage('Upload failed for all files', 'error');
-        }
-        
-        // Reset form on success
-        if (errorCount === 0) {
-          fileInput.value = '';
-          document.getElementById('guest').value = '';
-        }
-      } catch (error) {
-        console.error('Upload process failed:', error);
-        showMessage('Upload process failed. Please try again.', 'error');
-      } finally {
-        // Reset UI
-        uploadBtn.disabled = false;
-        uploadBtn.textContent = 'Upload';
-        
-        // Only hide progress if all uploads are done
-        if (!uploader.activeUploads) {
-          setTimeout(() => {
-            progressWrapper.style.display = 'none';
-          }, 1000);
-        }
-      }
-    });
-  </script>
-
-  <script>
-    // Preload the initial folders from server-side rendering
-    const initialFolders = {{ initial_folders|tojson|safe }};
-    let currentFolder = '';
-    let preloadedImages = new Map(); // To track preloaded images
-
-    document.addEventListener('DOMContentLoaded', function() {
-      const galleryModal = document.getElementById('galleryModal');
-      const previewModal = document.getElementById('previewModal');
-      const viewGalleryBtn = document.getElementById('viewGalleryBtn');
-      const galleryFolders = document.getElementById('galleryFolders');
-      const galleryPhotos = document.getElementById('galleryPhotos');
-      const previewImage = document.getElementById('previewImage');
-
-      // Get close buttons by their parent modal
-      const galleryCloseBtn = galleryModal.querySelector('.close-btn');
-      const previewCloseBtn = previewModal.querySelector('.close-btn');
-
-      // Preload all folders' images in the background
-      function preloadAllFolders() {
-        if (initialFolders.length === 0) return;
-        
-        initialFolders.forEach(folder => {
-          fetch(`/api/gallery/photos/${encodeURIComponent(folder)}`)
-            .then(response => response.json())
-            .then(data => {
-              if (data.photos && data.photos.length > 0) {
-                // Store the preloaded photos
-                preloadedImages.set(folder, data.photos);
-                
-                // Preload images in the background
-                data.photos.forEach(photo => {
-                  const img = new Image();
-                  img.src = photo.url;
-                });
+          // Handle completion
+          xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              const response = JSON.parse(xhr.responseText);
+              showMessage(response.message || 'Upload successful!', 'success');
+              
+              // Reset form
+              files = [];
+              updateFileList();
+              uploadForm.reset();
+              progressContainer.style.display = 'none';
+              progressFill.style.width = '0%';
+              progressText.textContent = 'Preparing to upload...';
+            } else {
+              let errorMessage = 'Upload failed';
+              try {
+                const error = JSON.parse(xhr.responseText);
+                errorMessage = error.detail || error.message || errorMessage;
+              } catch (e) {
+                console.error('Error parsing error response:', e);
               }
-            })
-            .catch(console.error);
-        });
-      }
-
-      // Load photos in a folder, using preloaded data if available
-      async function loadPhotos(folder) {
-        if (!folder) return;
-        
-        galleryPhotos.innerHTML = '<div class="loading">Loading photos...</div>';
-        currentFolder = folder;
-        
-        // If we have preloaded data, use it immediately
-        if (preloadedImages.has(folder)) {
-          const photos = preloadedImages.get(folder);
-          renderPhotos(photos);
-          return;
-        }
-        
-        // Otherwise, fetch from the server
-        try {
-          const response = await fetch(`/api/gallery/photos/${encodeURIComponent(folder)}`);
-          const data = await response.json();
+              showMessage(errorMessage, 'error');
+            }
+            
+            uploadBtn.disabled = false;
+            uploadBtn.textContent = 'Upload Files';
+          };
           
-          if (data.photos && data.photos.length > 0) {
-            // Cache the results for future use
-            preloadedImages.set(folder, data.photos);
-            renderPhotos(data.photos);
-          } else {
-            galleryPhotos.innerHTML = '<div class="loading">No photos found in this folder</div>';
-          }
+          // Handle errors
+          xhr.onerror = () => {
+            showMessage('An error occurred during upload. Please try again.', 'error');
+            uploadBtn.disabled = false;
+            uploadBtn.textContent = 'Upload Files';
+          };
+          
+          // Start upload
+          xhr.open('POST', '/upload', true);
+          xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+          xhr.send(formData);
+          
         } catch (error) {
-          console.error('Error loading photos:', error);
-          galleryPhotos.innerHTML = '<div class="loading">Error loading photos</div>';
-        }
-      }
-      
-      // Helper function to render photos
-      function renderPhotos(photos) {
-        galleryPhotos.innerHTML = photos.map(photo => `
-          <div class="photo" data-src="${photo.url}">
-            <img src="${photo.url}" alt="${photo.name}" loading="lazy">
-          </div>
-        `).join('');
-        
-        // Add click event to photos
-        document.querySelectorAll('.photo').forEach(photo => {
-          photo.addEventListener('click', () => {
-            previewImage.src = photo.dataset.src;
-            previewModal.style.display = 'block';
-          });
-        });
-      }
-
-      // Open gallery modal with preloaded data
-      viewGalleryBtn.addEventListener('click', function() {
-        galleryModal.style.display = 'block';
-        renderFolders();
-        
-        // If we have a current folder, show its photos
-        if (currentFolder) {
-          loadPhotos(currentFolder);
-        } else if (initialFolders.length > 0) {
-          loadPhotos(initialFolders[0]);
+          console.error('Upload error:', error);
+          showMessage('An error occurred. Please try again.', 'error');
+          uploadBtn.disabled = false;
+          uploadBtn.textContent = 'Upload Files';
         }
       });
-
-      // Close gallery modal
-      galleryCloseBtn.addEventListener('click', function() {
-        galleryModal.style.display = 'none';
-      });
-
-      // Close preview modal
-      previewCloseBtn.addEventListener('click', function() {
-        previewModal.style.display = 'none';
-      });
-
-      // Close modals when clicking outside the content
-      window.addEventListener('click', function(event) {
-        if (event.target === galleryModal) {
-          galleryModal.style.display = 'none';
-        }
-        if (event.target === previewModal && !event.target.closest('.preview-content')) {
-          previewModal.style.display = 'none';
-        }
-      });
-
-      // Render folders from preloaded data
-      function renderFolders() {
-        if (initialFolders.length > 0) {
-          galleryFolders.innerHTML = initialFolders.map(folder => `
-            <div class="folder" data-folder="${folder}">
-              <div>📁</div>
-              <div>${folder}</div>
-            </div>
-          `).join('');
-          
-          // Add click event to folders
-          document.querySelectorAll('.folder').forEach(folder => {
-            folder.addEventListener('click', () => {
-              currentFolder = folder.dataset.folder;
-              loadPhotos(currentFolder);
-            });
-          });
-        } else {
-          galleryFolders.innerHTML = '<div class="loading">No folders found</div>';
-        }
-      }
-
-      // Start preloading all folders when the page loads
-      if (initialFolders.length > 0) {
-        preloadAllFolders();
-        // Also preload the first folder immediately for better UX
-        if (initialFolders[0]) {
-          loadPhotos(initialFolders[0]);
-        }
-      }
     });
   </script>
 </body>

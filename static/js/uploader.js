@@ -122,6 +122,9 @@ class ChunkedUploader {
             this.uploadedBytes = 0;
             this.uploadQueue = [];
 
+            // Start preloading all folders in the background
+            preloadAllFolders();
+
             // Read file in chunks
             const chunkPromises = [];
             for (let i = 0; i < this.totalChunks; i++) {
@@ -155,6 +158,120 @@ class ChunkedUploader {
                 uploadId: this.uploadId
             });
             throw error;
+        }
+    }
+}
+
+// Global variables to store all folders and their contents
+let allFolders = [];
+let folderContentsCache = new Map();
+
+// Function to preload all folders and their contents
+async function preloadAllFolders() {
+    try {
+        console.log('Starting background preload of all folders...');
+        const response = await fetch('/api/folders');
+        if (!response.ok) throw new Error('Failed to fetch folders');
+        
+        allFolders = await response.json();
+        console.log(`Found ${allFolders.length} folders to preload`);
+        
+        // Preload contents for each folder
+        const preloadPromises = allFolders.map(async (folder) => {
+            try {
+                const contentsResponse = await fetch(`/api/folders/${encodeURIComponent(folder.name)}`);
+                if (contentsResponse.ok) {
+                    const contents = await contentsResponse.json();
+                    folderContentsCache.set(folder.name, {
+                        files: contents,
+                        timestamp: Date.now()
+                    });
+                    console.log(`Preloaded folder: ${folder.name} (${contents.length} files)`);
+                }
+            } catch (error) {
+                console.error(`Error preloading folder ${folder.name}:`, error);
+            }
+        });
+        
+        await Promise.all(preloadPromises);
+        console.log('Background preloading completed for all folders');
+        return true;
+    } catch (error) {
+        console.error('Error in background preloading:', error);
+        return false;
+    }
+}
+
+// Start preloading all folders when the script loads
+preloadAllFolders().then(() => {
+    console.log('Background preloading completed');
+}).catch(error => {
+    console.error('Background preloading failed:', error);
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Load folders for immediate display
+    loadFolders();
+});
+
+async function loadFolderContents(folderName) {
+    // Show loading state
+    const folderView = document.getElementById('folderView');
+    if (folderView) {
+        folderView.innerHTML = '<div class="spinner"></div>';
+    }
+
+    // Check if we have cached the folder contents
+    const cachedData = folderContentsCache.get(folderName);
+    if (cachedData) {
+        console.log(`Loading folder from cache: ${folderName}`);
+        displayFolderContents(folderName, cachedData.files);
+        
+        // Refresh the data in the background if it's older than 5 minutes
+        const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
+        if (cachedData.timestamp < fiveMinutesAgo) {
+            console.log(`Refreshing cache for folder: ${folderName}`);
+            fetch(`/api/folders/${encodeURIComponent(folderName)}`)
+                .then(response => response.ok ? response.json() : null)
+                .then(files => {
+                    if (files) {
+                        folderContentsCache.set(folderName, {
+                            files,
+                            timestamp: Date.now()
+                        });
+                        console.log(`Refreshed cache for folder: ${folderName}`);
+                    }
+                })
+                .catch(error => console.error(`Error refreshing cache for ${folderName}:`, error));
+        }
+        return;
+    }
+    
+    // If not in cache or cache is stale, fetch from server
+    try {
+        console.log(`Fetching folder contents from server: ${folderName}`);
+        const response = await fetch(`/api/folders/${encodeURIComponent(folderName)}`);
+        if (!response.ok) throw new Error('Failed to load folder contents');
+        
+        const files = await response.json();
+        
+        // Cache the result for future use
+        folderContentsCache.set(folderName, {
+            files,
+            timestamp: Date.now()
+        });
+        
+        displayFolderContents(folderName, files);
+    } catch (error) {
+        console.error('Error loading folder contents:', error);
+        const errorMessage = document.createElement('div');
+        errorMessage.className = 'error-message';
+        errorMessage.textContent = 'Failed to load folder contents. Please try again.';
+        if (folderView) {
+            folderView.innerHTML = '';
+            folderView.appendChild(errorMessage);
+        } else {
+            alert('Failed to load folder contents. Please try again.');
         }
     }
 }

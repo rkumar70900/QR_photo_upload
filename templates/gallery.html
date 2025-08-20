@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Photo Gallery</title>
+  <link href="https://fonts.googleapis.com/css2?family=Edu+NSW+ACT+Cursive:wght@400..700&family=M+PLUS+Rounded+1c:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #4F46E5;
+      --primary-hover: #4338CA;
+      --gray-100: #F3F4F6;
+      --gray-200: #E5E7EB;
+      --gray-700: #374151;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'M PLUS Rounded 1c', -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.5;
+      color: #111827;
+      background-color: #F9FAFB;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    h1 {
+      font-family: 'Edu NSW ACT Cursive', cursive;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      font-size: 2rem;
+      font-weight: 700;
+      color: #111827;
+      margin-bottom: 1rem;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-bottom: 1.5rem;
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .back-link:hover {
+      text-decoration: underline;
+    }
+
+    .folders-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+    }
+
+    .folder-card {
+      background: white;
+      border-radius: 0.75rem;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      transition: transform 0.2s;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .folder-card:hover {
+      transform: translateY(-4px);
+    }
+
+    .folder-thumbnail {
+      position: relative;
+      padding-top: 75%;
+      background: var(--gray-100);
+      overflow: hidden;
+    }
+
+    .folder-thumbnail img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .folder-info {
+      padding: 1rem;
+    }
+
+    .folder-name {
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .file-count {
+      font-size: 0.875rem;
+      color: #6B7280;
+    }
+
+    /* Image viewer modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      position: relative;
+      max-width: 90%;
+      max-height: 90%;
+    }
+
+    .modal-image {
+      max-width: 100%;
+      max-height: 80vh;
+      display: block;
+      margin: 0 auto;
+    }
+
+    .modal-nav {
+      position: absolute;
+      top: 50%;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 1rem;
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+
+    .nav-btn {
+      background: rgba(255, 255, 255, 0.8);
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      pointer-events: auto;
+      font-size: 1.25rem;
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: rgba(255, 255, 255, 0.8);
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.5rem;
+    }
+
+    .download-btn {
+      position: absolute;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background-color 0.2s;
+    }
+
+    .download-btn:hover {
+      background: var(--primary-hover);
+    }
+
+    /* Loading spinner */
+    .spinner {
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top: 4px solid white;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 2rem auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Folder view */
+    .folder-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .download-all {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background-color 0.2s;
+    }
+
+    .download-all:hover {
+      background: var(--primary-hover);
+    }
+
+    .photos-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+    }
+
+    .photo-thumbnail {
+      position: relative;
+      border-radius: 0.5rem;
+      overflow: hidden;
+      cursor: pointer;
+      aspect-ratio: 1;
+      background: var(--gray-100);
+    }
+
+    .photo-thumbnail img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.2s;
+    }
+
+    .photo-thumbnail:hover img {
+      transform: scale(1.05);
+    }
+
+    .download-single {
+      position: absolute;
+      bottom: 0.5rem;
+      right: 0.5rem;
+      background: rgba(0, 0, 0, 0.6);
+      color: white;
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .photo-thumbnail:hover .download-single {
+      opacity: 1;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 1rem;
+      }
+      
+      .folders-grid, .photos-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>Celebrating Mr and Mrs K</h1>
+      <p class="subtitle">Browse and download your favorite moments</p>
+      <a href="/" class="back-link">← Back to Upload</a>
+    </header>
+
+    <div id="foldersView">
+      <div class="folders-grid" id="foldersGrid">
+        <!-- Folders will be loaded here -->
+        <div class="spinner"></div>
+      </div>
+    </div>
+
+    <div id="folderView" style="display: none;">
+      <div class="folder-header">
+        <a href="/gallery" class="back-link">← Back to Gallery</a>
+        <button id="downloadAllBtn" class="download-all">
+          Download All
+        </button>
+      </div>
+      <div class="photos-grid" id="photosGrid">
+        <!-- Photos will be loaded here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Image Viewer Modal -->
+  <div id="imageViewer" class="modal">
+    <button class="close-btn" id="closeModal">&times;</button>
+    <div class="modal-content">
+      <img id="modalImage" class="modal-image" src="" alt="">
+      <div class="modal-nav">
+        <button class="nav-btn" id="prevBtn">❮</button>
+        <button class="nav-btn" id="nextBtn">❯</button>
+      </div>
+      <button class="download-btn" id="downloadCurrentBtn">
+        Download Image
+      </button>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const foldersView = document.getElementById('foldersView');
+      const folderView = document.getElementById('folderView');
+      const foldersGrid = document.getElementById('foldersGrid');
+      const photosGrid = document.getElementById('photosGrid');
+      const downloadAllBtn = document.getElementById('downloadAllBtn');
+      const imageViewer = document.getElementById('imageViewer');
+      const modalImage = document.getElementById('modalImage');
+      const closeModalBtn = document.getElementById('closeModal');
+      const prevBtn = document.getElementById('prevBtn');
+      const nextBtn = document.getElementById('nextBtn');
+      const downloadCurrentBtn = document.getElementById('downloadCurrentBtn');
+
+      let currentFolder = null;
+      let currentPhotos = [];
+      let currentIndex = 0;
+
+      // Load folders on page load
+      loadFolders();
+
+      // Close modal when clicking outside the image
+      imageViewer.addEventListener('click', (e) => {
+        if (e.target === imageViewer) {
+          closeModal();
+        }
+      });
+
+      // Close modal with escape key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeModal();
+        }
+      });
+
+      closeModalBtn.addEventListener('click', closeModal);
+
+      // Navigation in modal
+      prevBtn.addEventListener('click', () => navigate(-1));
+      nextBtn.addEventListener('click', () => navigate(1));
+
+      // Keyboard navigation
+      document.addEventListener('keydown', (e) => {
+        if (!imageViewer.style.display || imageViewer.style.display === 'none') return;
+        
+        if (e.key === 'ArrowLeft') {
+          navigate(-1);
+        } else if (e.key === 'ArrowRight') {
+          navigate(1);
+        }
+      });
+
+      // Load all folders
+      async function loadFolders() {
+        try {
+          const response = await fetch('/api/folders');
+          const folders = await response.json();
+          
+          if (folders.length === 0) {
+            foldersGrid.innerHTML = '<p>No folders found. Upload some photos to get started!</p>';
+            return;
+          }
+
+          foldersGrid.innerHTML = folders.map(folder => `
+            <div class="folder-card" data-folder="${folder.name}">
+              <div class="folder-thumbnail">
+                ${folder.thumbnail ? 
+                  `<img src="/uploads/${folder.name}/${folder.thumbnail}" alt="${folder.name}">` :
+                  '<div style="display: flex; align-items: center; justify-content: center; height: 100%;">📁</div>'
+                }
+              </div>
+              <div class="folder-info">
+                <div class="folder-name">${folder.name}</div>
+                <div class="file-count">${folder.count} ${folder.count === 1 ? 'item' : 'items'}</div>
+              </div>
+            </div>
+          `).join('');
+
+          // Add click event to folder cards
+          document.querySelectorAll('.folder-card').forEach(card => {
+            card.addEventListener('click', (e) => {
+              e.preventDefault();
+              const folderName = card.getAttribute('data-folder');
+              openFolder(folderName);
+            });
+          });
+
+        } catch (error) {
+          console.error('Error loading folders:', error);
+          foldersGrid.innerHTML = '<p>Error loading folders. Please try again later.</p>';
+        }
+      }
+
+      // Open a specific folder
+      async function openFolder(folderName) {
+        try {
+          currentFolder = folderName;
+          const response = await fetch(`/api/folders/${encodeURIComponent(folderName)}`);
+          currentPhotos = await response.json();
+          
+          if (currentPhotos.length === 0) {
+            photosGrid.innerHTML = '<p>No photos found in this folder.</p>';
+          } else {
+            photosGrid.innerHTML = currentPhotos.map((photo, index) => `
+              <div class="photo-thumbnail" data-index="${index}">
+                <img src="/uploads/${folderName}/${photo}" alt="${photo}" loading="lazy">
+                <button class="download-single" data-filename="${photo}">
+                  ↓
+                </button>
+              </div>
+            `).join('');
+
+            // Add click events to thumbnails
+            document.querySelectorAll('.photo-thumbnail').forEach((thumb, index) => {
+              thumb.addEventListener('click', (e) => {
+                // Don't open modal if download button was clicked
+                if (e.target.closest('.download-single')) {
+                  e.stopPropagation();
+                  return;
+                }
+                openModal(index);
+              });
+            });
+
+            // Add click events to download buttons
+            document.querySelectorAll('.download-single').forEach(btn => {
+              btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const filename = btn.getAttribute('data-filename');
+                downloadFile(filename);
+              });
+            });
+          }
+
+          // Show folder view
+          foldersView.style.display = 'none';
+          folderView.style.display = 'block';
+          
+          // Update download all button
+          downloadAllBtn.onclick = downloadAll;
+
+        } catch (error) {
+          console.error('Error loading folder:', error);
+          alert('Error loading folder. Please try again.');
+        }
+      }
+
+      // Open image in modal
+      function openModal(index) {
+        currentIndex = index;
+        const photo = currentPhotos[currentIndex];
+        modalImage.src = `/uploads/${currentFolder}/${photo}`;
+        modalImage.alt = photo;
+        imageViewer.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+      }
+
+      // Close modal
+      function closeModal() {
+        imageViewer.style.display = 'none';
+        document.body.style.overflow = '';
+      }
+
+      // Navigate between images
+      function navigate(direction) {
+        currentIndex = (currentIndex + direction + currentPhotos.length) % currentPhotos.length;
+        const photo = currentPhotos[currentIndex];
+        modalImage.src = `/uploads/${currentFolder}/${photo}`;
+        modalImage.alt = photo;
+      }
+
+      // Download a single file
+      function downloadFile(filename) {
+        const link = document.createElement('a');
+        link.href = `/uploads/${currentFolder}/${filename}`;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
+      // Download all files in the current folder
+      async function downloadAll() {
+        try {
+          const response = await fetch(`/api/folders/${encodeURIComponent(currentFolder)}/download`);
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${currentFolder}.zip`;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+        } catch (error) {
+          console.error('Error downloading files:', error);
+          alert('Error downloading files. Please try again.');
+        }
+      }
+
+      // Set up download current button
+      downloadCurrentBtn.addEventListener('click', () => {
+        const currentPhoto = currentPhotos[currentIndex];
+        downloadFile(currentPhoto);
+      });
+    });
+  </script>
+</body>
+</html>
