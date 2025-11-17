@@ -234,6 +234,7 @@
     }
 
     .folder {
+        position: relative;
         padding: 15px;
         background-color: #f8f9fa;
         border-radius: 4px;
@@ -261,6 +262,51 @@
         border-radius: 4px;
         overflow: hidden;
         cursor: pointer;
+    }
+    
+    .download-arrow-btn {
+        position: absolute;
+        bottom: 5px;
+        right: 5px;
+        background: rgba(0,0,0,0.5);
+        border: none;
+        border-radius: 4px;
+        color: white;
+        cursor: pointer;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+    }
+    
+    .download-arrow-btn svg {
+        width: 14px;
+        height: 14px;
+        fill: #FFEB3B;
+    }
+    
+    .folder-download-btn {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        color: #333;
+        z-index: 2;
+    }
+    
+    .folder {
+        position: relative;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+        text-align: center;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
     }
 
     .photo img {
@@ -290,7 +336,7 @@
     <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data">
       <label for="guest">Your Name:</label>
       <input type="text" id="guest" name="guest" required>
-      <label for="media">Select Photos or Videos (Max 20, 1GB max per file):</label>
+      <label for="media">Select Photos or Videos (Max 40, 1GB max per file):</label>
       <input type="file" id="media" name="files" accept="image/*,video/*" multiple required>
       <button type="submit" id="uploadBtn">Upload</button>
 
@@ -414,8 +460,8 @@
         return;
       }
 
-      if (files.length > 20) {
-        showMessage('You can upload a maximum of 20 files.', 'error');
+      if (files.length > 40) {
+        showMessage('You can upload a maximum of 40 files.', 'error');
         return;
       }
 
@@ -436,12 +482,47 @@
           console.log(`Uploading file ${i+1}/${files.length}: ${file.name} (${(file.size / (1024 * 1024)).toFixed(2)} MB)`);
           
           try {
-            await uploader.uploadFile(file, guestName);
-            successCount++;
+            const formData = new FormData();
+            formData.append('guest', guestName);
+            formData.append('files', file);
+            
+            const response = await fetch('/upload', {
+              method: 'POST',
+              body: formData
+            });
+            
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const result = await response.json();
+            if (result.message && (result.message.includes('Successfully') || response.ok)) {
+              successCount++;
+              // Update progress
+              const progress = Math.round(((i + 1) / files.length) * 100);
+              progressBar.style.width = `${progress}%`;
+              progressBar.textContent = `${progress}%`;
+              
+              // If this is the last file, update the gallery
+              if (i === files.length - 1) {
+                try {
+                  const response = await fetch('/api/gallery/folders');
+                  const data = await response.json();
+                  if (data.folders) {
+                    initialFolders = data.folders;
+                    renderFolders();
+                  }
+                } catch (e) {
+                  console.error('Error updating gallery:', e);
+                  // Don't fail the upload if we can't update the gallery
+                }
+              }
+            } else {
+              throw new Error(result.message || 'Upload failed');
+            }
           } catch (error) {
             console.error(`Error uploading ${file.name}:`, error);
             errorCount++;
-            continue;
           }
         }
         
@@ -449,7 +530,7 @@
         if (successCount > 0) {
           showMessage(`Successfully uploaded ${successCount} file(s)${errorCount > 0 ? `, ${errorCount} failed` : ''}`, 
                      errorCount > 0 ? 'warning' : 'success');
-        } else if (errorCount > 0) {
+        } else {
           showMessage('Upload failed for all files', 'error');
         }
         
@@ -457,6 +538,17 @@
         if (errorCount === 0) {
           fileInput.value = '';
           document.getElementById('guest').value = '';
+        }
+        
+        // Reset form on success
+        if (successCount > 0) {
+          fileInput.value = '';
+          document.getElementById('guest').value = '';
+          // Show success message
+          showMessage(`Successfully uploaded ${successCount} file(s)${errorCount > 0 ? `, ${errorCount} failed` : ''}`, 
+                     errorCount > 0 ? 'warning' : 'success');
+        } else {
+          showMessage('Upload failed for all files', 'error');
         }
       } catch (error) {
         console.error('Upload process failed:', error);
@@ -466,19 +558,17 @@
         uploadBtn.disabled = false;
         uploadBtn.textContent = 'Upload';
         
-        // Only hide progress if all uploads are done
-        if (!uploader.activeUploads) {
-          setTimeout(() => {
-            progressWrapper.style.display = 'none';
-          }, 1000);
-        }
+        // Hide progress after a short delay
+        setTimeout(() => {
+          progressWrapper.style.display = 'none';
+        }, 1000);
       }
     });
   </script>
 
   <script>
     // Preload the initial folders from server-side rendering
-    const initialFolders = {{ initial_folders|tojson|safe }};
+    let initialFolders = {{ initial_folders|tojson|safe }};
     let currentFolder = '';
     let preloadedImages = new Map(); // To track preloaded images
 
@@ -552,16 +642,31 @@
       // Helper function to render photos
       function renderPhotos(photos) {
         galleryPhotos.innerHTML = photos.map(photo => `
-          <div class="photo" data-src="${photo.url}">
+          <div class="photo" data-src="${photo.url}" style="position: relative;">
             <img src="${photo.url}" alt="${photo.name}" loading="lazy">
+            <button class="download-arrow-btn" title="Download ${photo.name}" data-url="/download/image/${encodeURIComponent(currentFolder)}/${encodeURIComponent(photo.name)}">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="none" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather feather-download" aria-hidden="true" focusable="false">
+                <path fill="#FFEB3B" d="M12 2C11.4477 2 11 2.44772 11 3V13.5858L7.70711 10.2929C7.31658 9.90237 6.68342 9.90237 6.29289 10.2929C5.90237 10.6834 5.90237 11.3166 6.29289 11.7071L11.2929 16.7071C11.6834 17.0976 12.3166 17.0976 12.7071 16.7071L17.7071 11.7071C18.0976 11.3166 18.0976 10.6834 17.7071 10.2929C17.3166 9.90237 16.6834 9.90237 16.2929 10.2929L13 13.5858V3C13 2.44772 12.5523 2 12 2Z"/>
+                <rect x="5" y="18" width="14" height="2" rx="1" ry="1" fill="#FFEB3B"/>
+              </svg>
+            </button>
           </div>
         `).join('');
         
-        // Add click event to photos
+        // Add click event to photos for preview
         document.querySelectorAll('.photo').forEach(photo => {
-          photo.addEventListener('click', () => {
+          photo.querySelector('img').addEventListener('click', () => {
             previewImage.src = photo.dataset.src;
             previewModal.style.display = 'block';
+          });
+        });
+        
+        // Add click event to download buttons
+        document.querySelectorAll('.download-arrow-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const url = btn.dataset.url;
+            window.location.href = url;
           });
         });
       }
@@ -601,9 +706,16 @@
 
       // Render folders from preloaded data
       function renderFolders() {
-        if (initialFolders.length > 0) {
+        if (initialFolders && initialFolders.length > 0) {
           galleryFolders.innerHTML = initialFolders.map(folder => `
             <div class="folder" data-folder="${folder}">
+              <button class="folder-download-btn" title="Download all images in ${folder}" data-folder="${folder}">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+              </button>
               <div>📁</div>
               <div>${folder}</div>
             </div>
@@ -611,9 +723,21 @@
           
           // Add click event to folders
           document.querySelectorAll('.folder').forEach(folder => {
-            folder.addEventListener('click', () => {
-              currentFolder = folder.dataset.folder;
-              loadPhotos(currentFolder);
+            folder.addEventListener('click', (e) => {
+              // Only navigate if the click wasn't on the download button
+              if (!e.target.closest('.folder-download-btn')) {
+                currentFolder = folder.dataset.folder;
+                loadPhotos(currentFolder);
+              }
+            });
+          });
+          
+          // Add click event to folder download buttons
+          document.querySelectorAll('.folder-download-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+              e.stopPropagation();
+              const folder = btn.dataset.folder;
+              window.location.href = `/download/folder/${encodeURIComponent(folder)}`;
             });
           });
         } else {
@@ -622,7 +746,7 @@
       }
 
       // Start preloading all folders when the page loads
-      if (initialFolders.length > 0) {
+      if (initialFolders && initialFolders.length > 0) {
         preloadAllFolders();
         // Also preload the first folder immediately for better UX
         if (initialFolders[0]) {
